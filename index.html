@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Insights Check — Under Review</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -28,6 +29,9 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .btn-refresh{display:flex;align-items:center;gap:5px;padding:6px 14px;border:1.5px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);font-family:inherit;font-size:12px;font-weight:500;color:#fff;cursor:pointer;}
 .btn-refresh:hover{background:rgba(255,255,255,.22);}
 .btn-refresh svg{width:13px;height:13px;fill:#fff;}
+.tab-btn{height:36px;padding:0 16px;background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.75);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;border-radius:6px;margin:0 3px;transition:all .15s;}
+.tab-btn:hover{background:rgba(255,255,255,.22);color:#fff;}
+.tab-btn.active{background:#fff;color:var(--blue);font-weight:600;}
 
 /* ── Page layout ── */
 .page{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -136,6 +140,10 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 
 <div class="header">
   <h1>Insights Check — Under Review</h1>
+  <button class="tab-btn active" id="hdr-tab-pending" onclick="setView('pending')">Pending validation</button>
+  <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Review Validated</button>
+  <button class="tab-btn"        id="hdr-tab-sent"    onclick="setView('sent')">Reports Sent (Active)</button>
+  <button class="tab-btn"        id="hdr-tab-rc"      onclick="setView('rc')">Reporting Check</button>
   <div class="header-right">
     <select class="company-filter" id="co-filter" onchange="applyFilter()">
       <option value="">All companies</option>
@@ -151,15 +159,71 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
   <div class="page-header">
     <div class="page-title">Validation Queue</div>
     <div class="page-sub">Records marked Under Review — validate before sending to client.</div>
-    <div class="tabs">
-      <button class="tab active" id="tab-pending" onclick="setView('pending')">Pending validation</button>
-      <button class="tab"        id="tab-all"     onclick="setView('all')">Review Validated</button>
-      <button class="tab"        id="tab-sent"    onclick="setView('sent')">Reports Sent (Active)</button>
-    </div>
   </div>
   <div id="stats-bar" class="stats-bar"></div>
   <div class="body" id="body">
     <div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Loading…</div>
+  </div>
+
+  <!-- Reporting Check page -->
+  <div id="rc-page" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
+    <div style="background:#fff;border-bottom:1px solid var(--g200);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--g600);font-weight:500;">From</span>
+      <input type="date" id="rc_from" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
+      <span style="font-size:12px;color:var(--g600);font-weight:500;">To</span>
+      <input type="date" id="rc_to" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
+
+      <select id="rc_agency" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:90px;">
+        <option value="">All agencies</option>
+      </select>
+
+      <select id="rc_brand" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:130px;">
+        <option value="">All brands</option>
+      </select>
+
+      <select id="rc_store" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:120px;">
+        <option value="">All stores</option>
+      </select>
+
+      <select id="rc_promoter" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:140px;">
+        <option value="">All promoters</option>
+      </select>
+
+      <select id="rc_status" onchange="rc_render()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:130px;">
+        <option value="">All statuses</option>
+        <option value="complete">✅ Reported</option>
+        <option value="partial">⚠️ Partial</option>
+        <option value="missing">❌ Missing</option>
+      </select>
+
+      <button onclick="rc_load()" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-left:4px;">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.76-4.24l-2.3 2.3H15V2l-1.35.35z"/></svg>
+        Load
+      </button>
+      <button onclick="rc_resetFilters()" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;background:#fff;color:var(--g600);border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3v4h4M13 13v-4h-4M3 7a5 5 0 0 1 8.5-3.5M13 9a5 5 0 0 1-8.5 3.5"/></svg>
+        Reset
+      </button>
+      <button onclick="rc_exportExcel()" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;background:#fff;color:var(--green);border:1.5px solid var(--green);border-radius:var(--r);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H6a1 1 0 0 0-1 1v2H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h3v2a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM8 6.5l1.5 2L11 6.5h1.2L10.1 9.5l2.1 3H11l-1.5-2.1L8 12.5H6.8l2.1-3L6.8 6.5H8z"/></svg>
+        Export
+      </button>
+      <div id="rc_subline" style="margin-left:auto;font-size:12px;color:var(--g500);display:flex;align-items:center;gap:8px;">
+        <span id="rc_subline_text"></span>
+        <span id="rc_sync_badge"></span>
+      </div>
+    </div>
+
+    <div id="rc_stats" style="display:flex;gap:10px;padding:10px 24px;flex-shrink:0;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);"></div>
+
+    <div style="flex:1;overflow:hidden;padding:16px 24px;display:flex;">
+      <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:auto;width:100%;">
+        <div style="padding:48px;text-align:center;color:var(--g400);">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--g300)" style="display:block;margin:0 auto 10px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+          Select a date range and click Load
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -259,14 +323,32 @@ const todayISO=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getM
 const isActive=r=>r.startdate&&r.enddate&&r.startdate<=todayISO&&r.enddate>=todayISO;
 
 function setView(v){
+  if(v==='rc'){
+    document.getElementById('hdr-tab-pending').classList.remove('active');
+    document.getElementById('hdr-tab-all').classList.remove('active');
+    document.getElementById('hdr-tab-sent').classList.remove('active');
+    document.getElementById('hdr-tab-sent').style.background='';
+    document.getElementById('hdr-tab-sent').style.borderColor='';
+    document.getElementById('hdr-tab-sent').style.color='';
+    document.getElementById('hdr-tab-rc').classList.add('active');
+    document.getElementById('body').style.display='none';
+    document.getElementById('stats-bar').style.display='none';
+    document.getElementById('rc-page').style.display='flex';
+    rc_initIfNeeded();
+    return;
+  }
+  document.getElementById('hdr-tab-rc').classList.remove('active');
+  document.getElementById('rc-page').style.display='none';
+  document.getElementById('body').style.display='';
+  document.getElementById('stats-bar').style.display='';
   view=v;
-  document.getElementById('tab-pending').classList.toggle('active',v==='pending');
-  document.getElementById('tab-all').classList.toggle('active',v==='all');
-  document.getElementById('tab-sent').classList.toggle('active',v==='sent');
+  document.getElementById('hdr-tab-pending').classList.toggle('active',v==='pending');
+  document.getElementById('hdr-tab-all').classList.toggle('active',v==='all');
+  document.getElementById('hdr-tab-sent').classList.toggle('active',v==='sent');
   // Sent tab gets green styling
-  document.getElementById('tab-sent').style.background=v==='sent'?'var(--green-light)':'';
-  document.getElementById('tab-sent').style.borderColor=v==='sent'?'var(--green)':'';
-  document.getElementById('tab-sent').style.color=v==='sent'?'var(--green)':'';
+  document.getElementById('hdr-tab-sent').style.background=v==='sent'?'var(--green-light)':'';
+  document.getElementById('hdr-tab-sent').style.borderColor=v==='sent'?'var(--green)':'';
+  document.getElementById('hdr-tab-sent').style.color=v==='sent'?'var(--green)':'';
   applyFilter();
 }
 function applyFilter(){
@@ -620,6 +702,358 @@ async function saveContact(){
     toast('Contact added and selected!','success');
   }catch(e){toast('Failed: '+e.message,'error');}
   finally{showLoad(false);}
+}
+
+// ── Reporting Check ─────────────────────────────────────────────────────────
+let rc_data = [];
+let rc_initialized = false;
+
+function rc_exportExcel(){
+  if(!rc_data.length){ toast('No data to export','error'); return; }
+
+  const filterAgency   = document.getElementById('rc_agency')?.value   || '';
+  const filterStore    = document.getElementById('rc_store')?.value    || '';
+  const filterBrand    = document.getElementById('rc_brand')?.value    || '';
+  const filterPromoter = document.getElementById('rc_promoter')?.value || '';
+  const filterStatus   = document.getElementById('rc_status')?.value   || '';
+
+  let rows = rc_data.filter(r => {
+    if(filterAgency   && r.agency         !== filterAgency)   return false;
+    if(filterStore    && r.schedStoreCode !== filterStore)    return false;
+    if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
+    if(filterPromoter && r.promoter       !== filterPromoter) return false;
+    if(filterStatus   && r.status         !== filterStatus)   return false;
+    return true;
+  });
+
+  rows.sort((a,b) => {
+    if(a.day !== b.day) return b.day.localeCompare(a.day);
+    return (a.promoter||'').localeCompare(b.promoter||'');
+  });
+
+  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing' };
+
+  const sheetData = rows.map(r => ({
+    'Date': r.day,
+    'Mission': r.missionId ?? '',
+    'Promoter': r.promoter,
+    'Sched. Store': r.schedStore || '',
+    'Sched. Brand': r.schedBrand || '',
+    'Questionnaire': r.hasQ ? 'Yes' : 'No',
+    'Sales': r.hasS ? 'Yes' : 'No',
+    'Reported Store(s)': r.reportedStores.join(', '),
+    'Reported Brand(s)': r.reportedBrands.join(', '),
+    'Pieces Sold': r.pieces ?? '',
+    'Turnover': r.turnover ?? '',
+    'Status': statusLabel[r.status] || r.status,
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  ws['!cols'] = [
+    {wch:11},{wch:9},{wch:22},{wch:32},{wch:18},
+    {wch:13},{wch:8},{wch:18},{wch:18},{wch:11},{wch:11},{wch:11}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Reporting Check');
+
+  const from = document.getElementById('rc_from').value;
+  const to   = document.getElementById('rc_to').value;
+  const fname = `Reporting_Check_${from}_to_${to}.xlsx`;
+  XLSX.writeFile(wb, fname);
+}
+
+function rc_resetFilters(){
+  ['rc_agency','rc_store','rc_brand','rc_promoter','rc_status'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().split('T')[0];
+  document.getElementById('rc_from').value = yStr;
+  document.getElementById('rc_to').value   = yStr;
+  rc_load();
+}
+
+function rc_initIfNeeded(){
+  if(!rc_initialized){
+    rc_initialized = true;
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split('T')[0];
+    document.getElementById('rc_from').value = yStr;
+    document.getElementById('rc_to').value   = yStr;
+    rc_load();
+  }
+}
+
+async function rc_load(){
+  const from = document.getElementById('rc_from').value;
+  const to   = document.getElementById('rc_to').value;
+  if(!from || !to){ toast('Please set a date range','error'); return; }
+
+  document.getElementById('rc_area').innerHTML = `
+    <div style="padding:48px;text-align:center;color:var(--g400);">
+      <div style="width:28px;height:28px;border:2px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px;"></div>
+      Loading…
+    </div>`;
+  document.getElementById('rc_stats').innerHTML = '';
+  document.getElementById('rc_subline_text').textContent = '';
+  document.getElementById('rc_sync_badge').innerHTML = '';
+
+  try{
+    const schedRows = await sbGet(
+      `GI_ScheduleV2?select=day,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_active,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&order=day.desc,promoter_fullname.asc`
+    );
+
+    if(!schedRows.length){
+      document.getElementById('rc_area').innerHTML = '<div style="padding:48px;text-align:center;color:var(--g400);">No scheduled shifts found for this period.</div>';
+      return;
+    }
+
+    const EXCLUDED_ROLES = new Set([
+      'Team Leader','Team leader','Team Leader GVA',
+      'Superviseur / euse','Superviseur/euse',
+      'Téléopérateur/trice'
+    ]);
+
+    const seen = new Set();
+    const deduped = schedRows.filter(r => {
+      if(EXCLUDED_ROLES.has(r.role)) return false;
+      const key = `${r.day}|${r.store_code}|${(r.promoter_fullname||'').toUpperCase().trim()}`;
+      if(seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+
+    const lastSynced = deduped.reduce((latest, r) => r.synced_at > latest ? r.synced_at : latest, deduped[0].synced_at);
+
+    const questRows = await sbGet(
+      `legacy_questionnaire?select=Date,Promoter,Store,Brand,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`
+    );
+    const qMap = {};
+    questRows.forEach(q => {
+      const key = `${q.Date}|${(q.Promoter||'').toUpperCase().trim()}`;
+      if(!qMap[key]) qMap[key] = [];
+      qMap[key].push(q);
+    });
+
+    const salesRows = await sbGet(
+      `legacy_sales?select=Date,"Promoter Name",Store,Brand&Date=gte.${from}&Date=lte.${to}`
+    );
+    const sMap = {};
+    salesRows.forEach(s => {
+      const key = `${s.Date}|${(s['Promoter Name']||'').toUpperCase().trim()}`;
+      if(!sMap[key]) sMap[key] = [];
+      sMap[key].push(s);
+    });
+
+    rc_data = deduped.map(r => {
+      const pKey = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}`;
+      const qEntries = qMap[pKey] || [];
+      const sEntries = sMap[pKey] || [];
+      const hasQ = qEntries.length > 0;
+      const hasS = sEntries.length > 0;
+
+      const reportedStores = [...new Set([...qEntries.map(e=>e.Store), ...sEntries.map(e=>e.Store)].filter(Boolean))];
+      const reportedBrands = [...new Set([...qEntries.map(e=>e.Brand), ...sEntries.map(e=>e.Brand)].filter(Boolean))];
+
+      const pieces   = qEntries.reduce((sum,e)=> sum + (Number(e['Pieces Sold'])||0), 0);
+      const turnover = qEntries.reduce((sum,e)=> sum + (Number(e['Turnover of the day'])||0), 0);
+
+      let status;
+      if(hasQ)              status = 'complete';
+      else if(hasS)         status = 'partial';
+      else                  status = 'missing';
+
+      return {
+        day: r.day,
+        promoter: r.promoter_fullname,
+        schedStore: r.pos || r.store_code,
+        schedStoreCode: r.store_code,
+        schedBrand: r.brand,
+        missionId: r.mission_id,
+        agency: r.agency,
+        hasQ, hasS,
+        reportedStores, reportedBrands,
+        pieces: (hasQ ? pieces : null),
+        turnover: (hasQ ? turnover : null),
+        status,
+      };
+    });
+
+    rc_populateFilters();
+    rc_render();
+
+    const total = rc_data.length;
+    const reported = rc_data.filter(r=>r.status==='complete').length;
+    document.getElementById('rc_subline_text').textContent =
+      `${total} promoters \u00b7 ${reported} reported \u00b7 ${from} \u2192 ${to}`;
+    document.getElementById('rc_sync_badge').innerHTML =
+      `<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;">\ud83d\udd04 Azure sync ${rc_timeAgo(lastSynced)}</span>`;
+
+  } catch(e){
+    document.getElementById('rc_area').innerHTML =
+      `<div style="padding:48px;text-align:center;color:var(--red);">Error: ${e.message}</div>`;
+  }
+}
+
+function rc_timeAgo(isoStr){
+  const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+  if(diff < 60)   return diff + 'm ago';
+  if(diff < 1440) return Math.floor(diff/60) + 'h ago';
+  return Math.floor(diff/1440) + 'd ago';
+}
+
+function rc_populateFilters(){
+  const agencies  = [...new Set(rc_data.map(r=>r.agency).filter(Boolean))].sort();
+  const stores    = [...new Set(rc_data.map(r=>r.schedStoreCode).filter(Boolean))].sort();
+  const brands    = [...new Set(rc_data.map(r=>r.schedBrand).filter(Boolean))].sort();
+  const promoters = [...new Set(rc_data.map(r=>r.promoter).filter(Boolean))].sort();
+
+  const ag = document.getElementById('rc_agency');
+  if(ag){
+    const cur = ag.value;
+    ag.innerHTML = '<option value="">All agencies</option>' +
+      agencies.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');
+    ag.style.display = agencies.length ? '' : 'none';
+    ag.onchange = rc_render;
+  }
+
+  const ss = document.getElementById('rc_store');
+  if(ss){
+    const cur = ss.value;
+    ss.innerHTML = '<option value="">All stores</option>' +
+      stores.map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
+    ss.onchange = rc_render;
+  }
+
+  const bs = document.getElementById('rc_brand');
+  if(bs){
+    const cur = bs.value;
+    bs.innerHTML = '<option value="">All brands</option>' +
+      brands.map(b=>`<option value="${b}"${b===cur?' selected':''}>${b}</option>`).join('');
+    bs.style.display = '';
+    bs.onchange = rc_render;
+  }
+
+  const pr = document.getElementById('rc_promoter');
+  if(pr){
+    const cur = pr.value;
+    pr.innerHTML = '<option value="">All promoters</option>' +
+      promoters.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+    pr.onchange = rc_render;
+  }
+
+  const stEl = document.getElementById('rc_status');
+  if(stEl) stEl.onchange = rc_render;
+}
+
+function rc_render(){
+  const filterAgency   = document.getElementById('rc_agency')?.value   || '';
+  const filterStore    = document.getElementById('rc_store')?.value    || '';
+  const filterBrand    = document.getElementById('rc_brand')?.value    || '';
+  const filterPromoter = document.getElementById('rc_promoter')?.value || '';
+  const filterStatus   = document.getElementById('rc_status')?.value   || '';
+
+  let rows = rc_data.filter(r => {
+    if(filterAgency   && r.agency     !== filterAgency)   return false;
+    if(filterStore    && r.schedStoreCode !== filterStore)    return false;
+    if(filterBrand    && r.schedBrand !== filterBrand)    return false;
+    if(filterPromoter && r.promoter   !== filterPromoter) return false;
+    if(filterStatus   && r.status     !== filterStatus)   return false;
+    return true;
+  });
+
+  rows.sort((a,b) => {
+    if(a.day !== b.day) return b.day.localeCompare(a.day);
+    return (a.promoter||'').localeCompare(b.promoter||'');
+  });
+
+  const total     = rows.length;
+  const complete  = rows.filter(r=>r.status==='complete').length;
+  const partial   = rows.filter(r=>r.status==='partial').length;
+  const missing   = rows.filter(r=>r.status==='missing').length;
+  const pct       = total ? Math.round(complete/total*100) : 0;
+  const totalPieces   = rows.reduce((n,r)=>n+(r.pieces||0),0);
+  const totalTurnover = rows.reduce((n,r)=>n+(r.turnover||0),0);
+
+  document.getElementById('rc_stats').innerHTML = [
+    { val: total,    label:'Promoters', col:'var(--blue)',  bg:'#fff' },
+    { val: complete, label:'Reported',  col:'var(--green)', bg:'var(--green-light)' },
+    { val: partial,  label:'Partial',   col:'var(--amber)', bg:'var(--amber-light)' },
+    { val: missing,  label:'Missing',   col:'var(--red)',   bg:'var(--red-light)' },
+    { val: pct+'%',  label:'Compliance',col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)', bg:'var(--g50)' },
+    { val: totalPieces.toLocaleString(),   label:'Pieces sold', col:'var(--g700)', bg:'var(--g50)' },
+    { val: totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}), label:'Turnover', col:'var(--g900)', bg:'var(--g50)' },
+  ].map(s=>`<div style="background:${s.bg};border:1px solid var(--g200);border-radius:8px;padding:8px 16px;display:flex;flex-direction:column;gap:1px;min-width:95px;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+    <span style="font-size:20px;font-weight:800;color:${s.col};font-family:monospace;">${s.val}</span>
+    <span style="font-size:10.5px;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">${s.label}</span>
+  </div>`).join('');
+
+  if(!rows.length){
+    document.getElementById('rc_area').innerHTML = '<div style="padding:48px;text-align:center;color:var(--g400);">No results match these filters.</div>';
+    return;
+  }
+
+  const byDate = {};
+  rows.forEach(r=>{ if(!byDate[r.day]) byDate[r.day]=[]; byDate[r.day].push(r); });
+  const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+
+  const badge = s => {
+    if(s==='complete') return `<span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">\u2705 Reported</span>`;
+    if(s==='partial')  return `<span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">\u26a0\ufe0f Partial</span>`;
+    return `<span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">\u274c Missing</span>`;
+  };
+  const check = ok => ok
+    ? `<span style="color:var(--green);font-weight:800;font-size:14px;">\u2713</span>`
+    : `<span style="color:var(--red);font-size:14px;">\u2717</span>`;
+
+  const mismatchTag = (sched, reported) => {
+    if(!reported.length) return '<span style="color:var(--g300);">\u2014</span>';
+    const mismatch = !reported.some(x => (x||'').toUpperCase().trim() === (sched||'').toUpperCase().trim());
+    const txt = reported.join(', ');
+    return mismatch
+      ? `<span style="color:var(--amber);font-weight:600;" title="${txt} \u2014 differs from scheduled: ${sched||'\u2014'}">${txt} \u26a0\ufe0f</span>`
+      : `<span title="${txt}">${txt}</span>`;
+  };
+
+  let html = `<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px;">
+    <thead><tr style="background:var(--g50);position:sticky;top:0;z-index:5;">
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Date</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Mission</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Promoter</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Store</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Brand</th>
+      <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Quest.</th>
+      <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sales</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;width:90px;max-width:90px;">Reported Store(s)</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Reported Brand(s)</th>
+      <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Pcs Sold</th>
+      <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Turnover</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Status</th>
+    </tr></thead><tbody>`;
+
+  dates.forEach(day => {
+    const dayRows = byDate[day];
+
+    dayRows.forEach(r => {
+      html += `<tr style="border-bottom:1px solid var(--g100);" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
+        <td style="padding:8px 12px;font-size:12px;color:var(--g600);">${r.day}</td>
+        <td style="padding:8px 12px;font-family:monospace;font-size:11px;color:var(--g500);">${r.missionId??'\u2014'}</td>
+        <td style="padding:8px 12px;font-weight:600;">${r.promoter}</td>
+        <td style="padding:8px 12px;font-weight:600;max-width:320px;white-space:normal;line-height:1.3;" title="${r.schedStore||''}">${r.schedStore||'\u2014'}</td>
+        <td style="padding:8px 12px;color:var(--g600);">${r.schedBrand||'\u2014'}</td>
+        <td style="padding:8px 12px;text-align:center;">${check(r.hasQ)}</td>
+        <td style="padding:8px 12px;text-align:center;">${check(r.hasS)}</td>
+        <td style="padding:8px 12px;font-family:monospace;width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${mismatchTag(r.schedStoreCode, r.reportedStores)}</td>
+        <td style="padding:8px 12px;">${mismatchTag(r.schedBrand, r.reportedBrands)}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:monospace;">${r.pieces!=null ? r.pieces.toLocaleString() : '\u2014'}</td>
+        <td style="padding:8px 12px;text-align:right;font-family:monospace;font-weight:600;">${r.turnover!=null ? r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}) : '\u2014'}</td>
+        <td style="padding:8px 12px;">${badge(r.status)}</td>
+      </tr>`;
+    });
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('rc_area').innerHTML = html;
 }
 
 loadData();
