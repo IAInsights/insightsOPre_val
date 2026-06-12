@@ -134,6 +134,54 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .toast.show{opacity:1;}
 .toast.success{background:var(--green);}
 .toast.error{background:var(--red);}
+
+/* ── Responsive ── */
+@media (max-width: 1024px){
+  .rv-col-left{flex:0 0 200px;}
+  .rv-col-validate{flex:0 0 190px;}
+  .rv-col-right{flex:0 0 130px;}
+}
+
+@media (max-width: 860px){
+  .header{height:auto;padding:10px 14px;flex-wrap:wrap;row-gap:8px;}
+  .header h1{font-size:14px;flex:1 1 100%;order:0;}
+  .header .tab-btn{font-size:12px;height:32px;padding:0 12px;}
+  .header-right{order:1;margin-left:0;flex:1 1 100%;justify-content:flex-end;}
+
+  .stats-bar{flex-wrap:wrap;gap:10px;margin:8px 10px 0;padding:8px 12px;}
+  .body{padding:8px 10px;}
+
+  .rv-top{flex-direction:column;}
+  .rv-col-left,.rv-col-center,.rv-col-validate,.rv-col-right{
+    flex:1 1 auto;width:100%;border-right:none;border-bottom:1px solid var(--g100);
+  }
+  .rv-col-right{border-bottom:none;}
+  .rv-col-validate{align-items:stretch;}
+  .ops-sel,.btn-validate,.btn-unvalidate{max-width:none;}
+
+  /* Reporting Check filter bar */
+  #rc-page > div:first-child{padding:10px 12px;}
+  #rc_stats{padding:8px 12px;}
+  #rc-page > div:nth-child(3){padding:8px 10px;}
+  #rc_subline{margin-left:0;flex-basis:100%;}
+
+  /* Reporting Check table → horizontal scroll */
+  #rc_area table{min-width:900px;}
+}
+
+@media (max-width: 480px){
+  .header h1{font-size:13px;}
+  .header .tab-btn{font-size:11px;height:30px;padding:0 9px;margin:0 2px;}
+  .company-filter{min-width:0;flex:1;}
+  .btn-refresh{padding:6px 10px;}
+  .btn-refresh span{display:none;}
+
+  .rv-col-left,.rv-col-center,.rv-col-validate,.rv-col-right{padding:8px 10px;}
+  .rv-brand-store{font-size:12px;}
+
+  .modal{padding:16px;width:100%;}
+  .mgrid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -150,7 +198,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
     </select>
     <button class="btn-refresh" onclick="loadData()">
       <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-      Refresh
+      <span>Refresh</span>
     </button>
   </div>
 </div>
@@ -164,13 +212,13 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
   <!-- Reporting Check page -->
   <div id="rc-page" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
     <div style="background:#fff;border-bottom:1px solid var(--g200);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
-      <span style="font-size:12px;color:var(--g600);font-weight:500;">From</span>
+      <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">From</span>
       <input type="date" id="rc_from" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
-      <span style="font-size:12px;color:var(--g600);font-weight:500;">To</span>
+      <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">To</span>
       <input type="date" id="rc_to" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
 
       <select id="rc_agency" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:90px;">
-        <option value="">All agencies</option>
+        <option value="">All companies</option>
       </select>
 
       <select id="rc_brand" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:130px;">
@@ -212,8 +260,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 
     <div id="rc_stats" style="display:flex;gap:10px;padding:10px 24px;flex-shrink:0;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);"></div>
 
-    <div style="flex:1;overflow:hidden;padding:16px 24px;display:flex;">
-      <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:auto;width:100%;">
+    <div style="flex:1;overflow:hidden;padding:16px 24px;display:flex;min-width:0;">
+      <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:auto;width:100%;min-width:0;">
         <div style="padding:48px;text-align:center;color:var(--g400);">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--g300)" style="display:block;margin:0 auto 10px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
           Select a date range and click Load
@@ -330,11 +378,13 @@ function setView(v){
     document.getElementById('body').style.display='none';
     document.getElementById('stats-bar').style.display='none';
     document.getElementById('rc-page').style.display='flex';
+    document.getElementById('co-filter').style.display='none';
     rc_initIfNeeded();
     return;
   }
   document.getElementById('hdr-tab-rc').classList.remove('active');
   document.getElementById('rc-page').style.display='none';
+  document.getElementById('co-filter').style.display='';
   document.getElementById('body').style.display='';
   document.getElementById('stats-bar').style.display='';
   view=v;
@@ -907,8 +957,15 @@ function rc_populateFilters(){
   const ag = document.getElementById('rc_agency');
   if(ag){
     const cur = ag.value;
-    ag.innerHTML = '<option value="">All agencies</option>' +
-      agencies.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');
+    // Map agency code (e.g. "FR") -> company name (e.g. "GLOBE TRAVEL RETAIL FR")
+    const codeToName = {};
+    (allCo||[]).forEach(c=>{
+      const m = c.name.match(/(?:GLOBE TRAVEL RETAIL|GLOBE TR)\s+(\w+)/i);
+      if(m) codeToName[m[1].toUpperCase()] = c.name;
+    });
+    if(codeToName['IR'] && !codeToName['IE']) codeToName['IE'] = codeToName['IR'].replace(/IR$/i,'IE');
+    ag.innerHTML = '<option value="">All companies</option>' +
+      agencies.map(a=>`<option value="${a}"${a===cur?' selected':''}>${codeToName[a.toUpperCase()]||a}</option>`).join('');
     ag.style.display = agencies.length ? '' : 'none';
     ag.onchange = rc_render;
   }
