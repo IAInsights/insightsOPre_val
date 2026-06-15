@@ -818,7 +818,7 @@ function rc_exportExcel(){
     return (a.promoter||'').localeCompare(b.promoter||'');
   });
 
-  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing' };
+  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing', absent:'Absent', absent_backup:'Absent + Backup', pending:'En attente' };
 
   const sheetData = rows.map(r => ({
     'Date': r.day,
@@ -901,7 +901,7 @@ async function rc_load(){
 
   try{
     const schedRows = await sbGet(
-      `GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_active,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&order=day.desc,promoter_fullname.asc`
+      `GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_active,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`
     );
 
     // Build pos_id → sector name map
@@ -986,9 +986,13 @@ async function rc_load(){
       const turnover = qEntries.reduce((sum,e)=> sum + (Number(e['Turnover of the day'])||0), 0);
 
       let status;
-      if(hasQ)        status = 'complete';
-      else if(hasS)   status = 'partial';
-      else            status = 'missing';
+      const ts = (r.timeslot_status||'').toLowerCase();
+      if(ts.includes('absent avec'))    status = 'absent_backup';
+      else if(ts.includes('absent'))    status = 'absent';
+      else if(ts.includes('attente'))   status = 'pending';
+      else if(hasQ)                     status = 'complete';
+      else if(hasS)                     status = 'partial';
+      else                              status = 'missing';
 
       return {
         day: r.day,
@@ -1006,6 +1010,7 @@ async function rc_load(){
         turnover: (hasQ ? turnover : null),
         sector: posToSector.get(r.pos_id) || null,
         posId: r.pos_id || null,
+        timeslotStatus: r.timeslot_status || null,
         status,
       };
     });
@@ -1311,22 +1316,27 @@ function rc_render(){
     return (a.promoter||'').localeCompare(b.promoter||'');
   });
 
-  const total     = rows.length;
-  const complete  = rows.filter(r=>r.status==='complete').length;
-  const partial   = rows.filter(r=>r.status==='partial').length;
-  const missing   = rows.filter(r=>r.status==='missing').length;
-  const pct       = total ? Math.round(complete/total*100) : 0;
+  const total         = rows.length;
+  const complete      = rows.filter(r=>r.status==='complete').length;
+  const partial       = rows.filter(r=>r.status==='partial').length;
+  const missing       = rows.filter(r=>r.status==='missing').length;
+  const absent        = rows.filter(r=>r.status==='absent').length;
+  const absentBackup  = rows.filter(r=>r.status==='absent_backup').length;
+  const pending       = rows.filter(r=>r.status==='pending').length;
+  const pct           = (total-absent-absentBackup-pending) ? Math.round(complete/(total-absent-absentBackup-pending)*100) : 0;
   const totalPieces   = rows.reduce((n,r)=>n+(r.pieces||0),0);
   const totalTurnover = rows.reduce((n,r)=>n+(r.turnover||0),0);
 
   const curStatus = document.getElementById('rc_status')?.value || '';
   document.getElementById('rc_stats').innerHTML = [
-    { val: total,    label:'Promoters',  col:'var(--blue)',  bg:'#fff',               status:'' },
-    { val: complete, label:'Reported',   col:'var(--green)', bg:'var(--green-light)', status:'complete' },
-    { val: partial,  label:'Partial',    col:'var(--amber)', bg:'var(--amber-light)', status:'partial' },
-    { val: missing,  label:'Missing',    col:'var(--red)',   bg:'var(--red-light)',   status:'missing' },
-    { val: pct+'%',  label:'Compliance', col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)', bg:'var(--g50)', status:null },
-    { val: totalPieces.toLocaleString(),   label:'Pieces sold', col:'var(--g700)', bg:'var(--g50)', status:null },
+    { val: total,        label:'Promoters',      col:'var(--blue)',  bg:'#fff',               status:'' },
+    { val: complete,     label:'Reported',        col:'var(--green)', bg:'var(--green-light)', status:'complete' },
+    { val: partial,      label:'Partial',         col:'var(--amber)', bg:'var(--amber-light)', status:'partial' },
+    { val: missing,      label:'Missing',         col:'var(--red)',   bg:'var(--red-light)',   status:'missing' },
+    { val: absent,       label:'Absent',          col:'var(--red)',   bg:'var(--red-light)',   status:'absent' },
+    { val: absentBackup, label:'Absent+Backup',   col:'#ea580c',     bg:'#fff7ed',            status:'absent_backup' },
+    { val: pct+'%',      label:'Compliance',      col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)', bg:'var(--g50)', status:null },
+    { val: totalPieces.toLocaleString(),          label:'Pieces sold', col:'var(--g700)', bg:'var(--g50)', status:null },
     { val: totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}), label:'Turnover', col:'var(--g900)', bg:'var(--g50)', status:null },
   ].map(s => {
     const isClickable = s.status !== null;
@@ -1350,9 +1360,12 @@ function rc_render(){
   const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
 
   const badge = s => {
-    if(s==='complete') return `<span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">\u2705 Reported</span>`;
-    if(s==='partial')  return `<span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">\u26a0\ufe0f Partial</span>`;
-    return `<span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">\u274c Missing</span>`;
+    if(s==='complete')      return `<span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Reported</span>`;
+    if(s==='partial')       return `<span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ Partial</span>`;
+    if(s==='absent_backup') return `<span style="background:#fff7ed;color:#ea580c;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">🔄 Absent + Backup</span>`;
+    if(s==='absent')        return `<span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">🚫 Absent</span>`;
+    if(s==='pending')       return `<span style="background:var(--g100);color:var(--g500);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ En attente</span>`;
+    return `<span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ Missing</span>`;
   };
   const check = ok => ok
     ? `<span style="color:var(--green);font-weight:800;font-size:14px;">\u2713</span>`
@@ -1387,10 +1400,16 @@ function rc_render(){
     const dayRows = byDate[day];
 
     dayRows.forEach(r => {
+      const isAbsent       = r.status === 'absent';
+      const isAbsentBackup = r.status === 'absent_backup';
+      const promoterColor  = isAbsent ? 'color:var(--red);' : isAbsentBackup ? 'color:#ea580c;' : '';
+      const promoterSuffix = isAbsent ? ' 🚫' : isAbsentBackup ? ' 🔄' : '';
+      const statusCell     = (isAbsent || isAbsentBackup) ? `<span style="color:var(--g300);">—</span>` : badge(r.status);
+
       html += `<tr style="border-bottom:1px solid var(--g100);" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
         <td style="padding:8px 12px;font-size:12px;color:var(--g600);">${r.day}</td>
         <td style="padding:8px 12px;font-family:monospace;font-size:11px;color:var(--g500);">${r.missionId??'\u2014'}</td>
-        <td style="padding:8px 12px;font-weight:600;">${r.promoter}</td>
+        <td style="padding:8px 12px;font-weight:600;${promoterColor}">${r.promoter}${promoterSuffix}</td>
         <td style="padding:8px 12px;font-weight:600;max-width:320px;white-space:normal;line-height:1.3;" title="${r.schedStore||''}">${r.schedStore||'\u2014'}</td>
         <td style="padding:8px 12px;color:var(--g600);">${r.schedBrand||'\u2014'}</td>
         <td style="padding:8px 12px;text-align:center;">${check(r.hasQ)}</td>
@@ -1399,7 +1418,7 @@ function rc_render(){
         <td style="padding:8px 12px;">${mismatchTag(r.schedBrand, r.reportedBrands)}</td>
         <td style="padding:8px 12px;text-align:right;font-family:monospace;">${r.pieces!=null ? r.pieces.toLocaleString() : '\u2014'}</td>
         <td style="padding:8px 12px;text-align:right;font-family:monospace;font-weight:600;">${r.turnover!=null ? r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}) : '\u2014'}</td>
-        <td style="padding:8px 12px;">${badge(r.status)}</td>
+        <td style="padding:8px 12px;">${statusCell}</td>
       </tr>`;
     });
   });
