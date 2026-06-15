@@ -135,6 +135,22 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .toast.success{background:var(--green);}
 .toast.error{background:var(--red);}
 
+/* Searchable dropdowns for Reporting Check */
+.rc-dd{position:relative;display:inline-flex;align-items:center;}
+.rc-dd-input{height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right 8px center;min-width:120px;cursor:pointer;}
+.rc-dd-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.15);}
+.rc-dd-list{display:none;position:absolute;top:34px;left:0;min-width:200px;max-height:240px;overflow-y:auto;background:#fff;border:1.5px solid var(--g300);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:999;font-size:12px;}
+.rc-dd-list.open{display:block;}
+.rc-dd-item{padding:7px 12px;cursor:pointer;white-space:nowrap;color:var(--g900);}
+.rc-dd-item:hover,.rc-dd-item.active{background:var(--blue);color:#fff;}
+.rc-dd-item.placeholder{color:var(--g400);}
+.rc-dd-none{padding:8px 12px;color:var(--g400);font-style:italic;}
+
+/* Campaign toggle buttons */
+.rc-camp-btn{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:20px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--g300);background:#fff;color:var(--g600);transition:all .15s;white-space:nowrap;}
+.rc-camp-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.rc-camp-btn.excluded{background:var(--g100);border-color:var(--g200);color:var(--g400);text-decoration:line-through;}
+
 /* ── Responsive ── */
 @media (max-width: 1024px){
   .rv-col-left{flex:0 0 200px;}
@@ -213,37 +229,47 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
   <div id="rc-page" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
     <div style="background:#fff;border-bottom:1px solid var(--g200);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
       <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">From</span>
-      <input type="date" id="rc_from" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
+      <input type="date" id="rc_from" onchange="rc_dateChanged()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
       <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">To</span>
-      <input type="date" id="rc_to" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
+      <input type="date" id="rc_to" onchange="rc_dateChanged()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
 
       <select id="rc_agency" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:90px;">
         <option value="">All companies</option>
       </select>
 
-      <select id="rc_brand" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:130px;">
-        <option value="">All brands</option>
-      </select>
+      <div class="rc-dd" id="rc_store_dd" style="position:relative;">
+        <div id="rc_store_trigger" onclick="rc_storeToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:130px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
+          <span id="rc_store_label">All stores</span>
+        </div>
+        <div class="rc-dd-list" id="rc_store_list" style="min-width:220px;padding-top:0;">
+          <div style="padding:6px 8px;border-bottom:1px solid var(--g100);position:sticky;top:0;background:#fff;z-index:2;">
+            <input id="rc_store_search" type="text" placeholder="Search stores…" oninput="rc_storeRender()" onmousedown="event.stopPropagation()" style="width:100%;height:26px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:11px;outline:none;box-sizing:border-box;">
+          </div>
+          <div id="rc_store_items"></div>
+        </div>
+      </div>
 
-      <select id="rc_store" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:120px;">
-        <option value="">All stores</option>
-      </select>
+      <div class="rc-dd" id="rc_brand_dd">
+        <input class="rc-dd-input" id="rc_brand_input" placeholder="All brands" autocomplete="off" oninput="rc_ddFilter('rc_brand_dd')" onfocus="rc_ddOpen('rc_brand_dd')" onblur="rc_ddBlur('rc_brand_dd')">
+        <div class="rc-dd-list" id="rc_brand_list"></div>
+        <input type="hidden" id="rc_brand">
+      </div>
 
-      <select id="rc_promoter" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:140px;">
-        <option value="">All promoters</option>
-      </select>
+      <div class="rc-dd" id="rc_campaign_dd" style="position:relative;">
+        <div id="rc_campaign_trigger" onclick="rc_campToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:160px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
+          <span id="rc_campaign_label">All campaigns</span>
+        </div>
+        <div class="rc-dd-list" id="rc_campaign_list" style="min-width:260px;"></div>
+      </div>
 
-      <select id="rc_status" onchange="rc_render()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:130px;">
-        <option value="">All statuses</option>
-        <option value="complete">✅ Reported</option>
-        <option value="partial">⚠️ Partial</option>
-        <option value="missing">❌ Missing</option>
-      </select>
+      <div class="rc-dd" id="rc_promoter_dd">
+        <input class="rc-dd-input" id="rc_promoter_input" placeholder="All promoters" autocomplete="off" oninput="rc_ddFilter('rc_promoter_dd')" onfocus="rc_ddOpen('rc_promoter_dd')" onblur="rc_ddBlur('rc_promoter_dd')">
+        <div class="rc-dd-list" id="rc_promoter_list"></div>
+        <input type="hidden" id="rc_promoter">
+      </div>
 
-      <button onclick="rc_load()" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-left:4px;">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.76-4.24l-2.3 2.3H15V2l-1.35.35z"/></svg>
-        Load
-      </button>
+      <input type="hidden" id="rc_status">
+
       <button onclick="rc_resetFilters()" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;background:#fff;color:var(--g600);border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3v4h4M13 13v-4h-4M3 7a5 5 0 0 1 8.5-3.5M13 9a5 5 0 0 1-8.5 3.5"/></svg>
         Reset
@@ -257,6 +283,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
         <span id="rc_sync_badge"></span>
       </div>
     </div>
+
+    <div id="rc_campaign_bar" style="display:none;background:#f8f9fb;border-bottom:1px solid var(--g200);padding:6px 24px;flex-shrink:0;flex-wrap:wrap;gap:6px;align-items:center;"></div>
 
     <div id="rc_stats" style="display:flex;gap:10px;padding:10px 24px;flex-shrink:0;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);"></div>
 
@@ -753,19 +781,32 @@ async function saveContact(){
 // ── Reporting Check ─────────────────────────────────────────────────────────
 let rc_data = [];
 let rc_initialized = false;
+let rc_excludedCampaigns = new Set();
+let rc_dateTimer = null;
+
+function rc_dateChanged(){
+  clearTimeout(rc_dateTimer);
+  rc_dateTimer = setTimeout(()=>{ if(document.getElementById('rc_from').value && document.getElementById('rc_to').value) rc_load(); }, 400);
+}
+
+function rc_toggleStatus(status){
+  const el = document.getElementById('rc_status');
+  if(!el) return;
+  el.value = el.value === status ? '' : status;
+  rc_render();
+}
 
 function rc_exportExcel(){
   if(!rc_data.length){ toast('No data to export','error'); return; }
 
   const filterAgency   = document.getElementById('rc_agency')?.value   || '';
-  const filterStore    = document.getElementById('rc_store')?.value    || '';
   const filterBrand    = document.getElementById('rc_brand')?.value    || '';
   const filterPromoter = document.getElementById('rc_promoter')?.value || '';
   const filterStatus   = document.getElementById('rc_status')?.value   || '';
 
   let rows = rc_data.filter(r => {
     if(filterAgency   && r.agency         !== filterAgency)   return false;
-    if(filterStore    && r.schedStoreCode !== filterStore)    return false;
+    if(rc_selectedStores.size && !rc_selectedStores.has(r.schedStoreCode)) return false;
     if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
     if(filterPromoter && r.promoter       !== filterPromoter) return false;
     if(filterStatus   && r.status         !== filterStatus)   return false;
@@ -809,9 +850,22 @@ function rc_exportExcel(){
 }
 
 function rc_resetFilters(){
-  ['rc_agency','rc_store','rc_brand','rc_promoter','rc_status'].forEach(id=>{
+  rc_excludedCampaigns = new Set();
+  rc_campUpdateLabel();
+  rc_campRender();
+  ['rc_agency'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = '';
+  });
+  const stEl = document.getElementById('rc_status');
+  if(stEl) stEl.value = '';
+  rc_selectedStores = new Set();
+  rc_storeUpdateLabel();
+  ['rc_brand','rc_promoter'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+    const inp = document.getElementById(id+'_input');
+    if(inp){ inp.value=''; }
   });
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.toISOString().split('T')[0];
@@ -847,8 +901,13 @@ async function rc_load(){
 
   try{
     const schedRows = await sbGet(
-      `GI_ScheduleV2?select=day,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_active,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&order=day.desc,promoter_fullname.asc`
+      `GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_active,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&order=day.desc,promoter_fullname.asc`
     );
+
+    // Build pos_id → sector name map
+    const storesWithSector = await sbGet('GI_stores?select=id,store,Sector_id');
+    const sectorMap = new Map(allSectors.map(s=>[s.id, s.Name]));
+    const posToSector = new Map(storesWithSector.map(s=>[s.id, sectorMap.get(s.Sector_id)||null]));
 
     if(!schedRows.length){
       document.getElementById('rc_area').innerHTML = '<div style="padding:48px;text-align:center;color:var(--g400);">No scheduled shifts found for this period.</div>';
@@ -872,29 +931,51 @@ async function rc_load(){
     const lastSynced = deduped.reduce((latest, r) => r.synced_at > latest ? r.synced_at : latest, deduped[0].synced_at);
 
     const questRows = await sbGet(
-      `legacy_questionnaire?select=Date,Promoter,Store,Brand,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`
+      `legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Brand,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`
     );
+    // Key by day|promoterid|store (primary), also by day|promotername|store (fallback)
     const qMap = {};
     questRows.forEach(q => {
-      const key = `${q.Date}|${(q.Promoter||'').toUpperCase().trim()}`;
-      if(!qMap[key]) qMap[key] = [];
-      qMap[key].push(q);
+      const idKey   = `${q.Date}|${q.Promoterid}|${(q.Store||'').toUpperCase().trim()}`;
+      const nameKey = `${q.Date}|${(q.Promoter||'').toUpperCase().trim()}|${(q.Store||'').toUpperCase().trim()}`;
+      [idKey, nameKey].forEach(k => { if(!qMap[k]) qMap[k]=[]; qMap[k].push(q); });
     });
 
     const salesRows = await sbGet(
-      `legacy_sales?select=Date,"Promoter Name",Store,Brand&Date=gte.${from}&Date=lte.${to}`
+      `legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Brand&Date=gte.${from}&Date=lte.${to}`
     );
     const sMap = {};
     salesRows.forEach(s => {
-      const key = `${s.Date}|${(s['Promoter Name']||'').toUpperCase().trim()}`;
-      if(!sMap[key]) sMap[key] = [];
-      sMap[key].push(s);
+      const idKey   = `${s.Date}|${s.Promoterid}|${(s.Store||'').toUpperCase().trim()}`;
+      const nameKey = `${s.Date}|${(s['Promoter Name']||'').toUpperCase().trim()}|${(s.Store||'').toUpperCase().trim()}`;
+      [idKey, nameKey].forEach(k => { if(!sMap[k]) sMap[k]=[]; sMap[k].push(s); });
     });
 
     rc_data = deduped.map(r => {
-      const pKey = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}`;
-      const qEntries = qMap[pKey] || [];
-      const sEntries = sMap[pKey] || [];
+      const storeCode = (r.store_code||'').toUpperCase().trim();
+      // Primary: match by promoter_id + store
+      const idKey     = `${r.day}|${r.promoter_id}|${storeCode}`;
+      // Fallback: match by name + store
+      const nameKey   = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|${storeCode}`;
+
+      let qEntries = qMap[idKey] || qMap[nameKey] || [];
+      let sEntries = sMap[idKey] || sMap[nameKey] || [];
+
+      // If still empty and promoter has only one shift that day, grab all entries for that promoter
+      const schedCount = deduped.filter(x => x.day===r.day && x.promoter_id===r.promoter_id).length;
+      if(!qEntries.length && schedCount === 1){
+        const allQId   = `${r.day}|${r.promoter_id}|`;
+        const allQName = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|`;
+        qEntries = Object.entries(qMap).filter(([k])=>k.startsWith(allQId)||k.startsWith(allQName)).flatMap(([,v])=>v);
+        qEntries = [...new Map(qEntries.map(e=>[e.ID,e])).values()];
+      }
+      if(!sEntries.length && schedCount === 1){
+        const allSId   = `${r.day}|${r.promoter_id}|`;
+        const allSName = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|`;
+        sEntries = Object.entries(sMap).filter(([k])=>k.startsWith(allSId)||k.startsWith(allSName)).flatMap(([,v])=>v);
+        sEntries = [...new Map(sEntries.map(e=>[e.id,e])).values()];
+      }
+
       const hasQ = qEntries.length > 0;
       const hasS = sEntries.length > 0;
 
@@ -905,27 +986,32 @@ async function rc_load(){
       const turnover = qEntries.reduce((sum,e)=> sum + (Number(e['Turnover of the day'])||0), 0);
 
       let status;
-      if(hasQ)              status = 'complete';
-      else if(hasS)         status = 'partial';
-      else                  status = 'missing';
+      if(hasQ)        status = 'complete';
+      else if(hasS)   status = 'partial';
+      else            status = 'missing';
 
       return {
         day: r.day,
         promoter: r.promoter_fullname,
+        promoterId: r.promoter_id,
         schedStore: r.pos || r.store_code,
         schedStoreCode: r.store_code,
         schedBrand: r.brand,
+        campaignName: r.campaign_name,
         missionId: r.mission_id,
         agency: r.agency,
         hasQ, hasS,
         reportedStores, reportedBrands,
         pieces: (hasQ ? pieces : null),
         turnover: (hasQ ? turnover : null),
+        sector: posToSector.get(r.pos_id) || null,
+        posId: r.pos_id || null,
         status,
       };
     });
 
     rc_populateFilters();
+    rc_populateCampaigns();
     rc_render();
 
     const total = rc_data.length;
@@ -948,16 +1034,246 @@ function rc_timeAgo(isoStr){
   return Math.floor(diff/1440) + 'd ago';
 }
 
+// ── Searchable dropdown helpers ──────────────────────────────────────────────
+const rc_ddData = { rc_brand_dd:[], rc_store_dd:[], rc_promoter_dd:[] };
+
+function rc_ddBuild(ddId, items, placeholder){
+  rc_ddData[ddId] = items;
+  const list = document.getElementById(ddId.replace('_dd','_list'));
+  const input = document.getElementById(ddId.replace('_dd','_input'));
+  const hidden = document.getElementById(ddId.replace('_dd',''));
+  if(!list||!input||!hidden) return;
+  input.placeholder = placeholder;
+  rc_ddRenderList(ddId, '');
+}
+
+function rc_ddRenderList(ddId, query){
+  const list = document.getElementById(ddId.replace('_dd','_list'));
+  const hidden = document.getElementById(ddId.replace('_dd',''));
+  const curVal = hidden.value;
+  const q = query.toLowerCase();
+  const items = rc_ddData[ddId] || [];
+  const filtered = q ? items.filter(i=>i.toLowerCase().includes(q)) : items;
+  const placeholder = list.closest('.rc-dd').querySelector('input[type=text],input:not([type=hidden])').placeholder.replace(/^All /,'All ');
+  let html = `<div class="rc-dd-item placeholder" data-val="" onmousedown="rc_ddSelect('${ddId}','','${placeholder}')">All ${placeholder.replace('All ','')}</div>`;
+  if(!filtered.length) html += `<div class="rc-dd-none">No results</div>`;
+  else html += filtered.map(i=>`<div class="rc-dd-item${i===curVal?' active':''}" data-val="${i}" onmousedown="rc_ddSelect('${ddId}','${i.replace(/'/g,"\\'")}','${placeholder}')">${i}</div>`).join('');
+  list.innerHTML = html;
+}
+
+function rc_ddFilter(ddId){
+  const input = document.getElementById(ddId.replace('_dd','_input'));
+  const hidden = document.getElementById(ddId.replace('_dd',''));
+  // If user clears input, reset value
+  if(!input.value) { hidden.value=''; rc_render(); }
+  rc_ddRenderList(ddId, input.value);
+  document.getElementById(ddId.replace('_dd','_list')).classList.add('open');
+}
+
+function rc_ddOpen(ddId){
+  rc_ddRenderList(ddId, document.getElementById(ddId.replace('_dd','_input')).value||'');
+  document.getElementById(ddId.replace('_dd','_list')).classList.add('open');
+}
+
+function rc_ddBlur(ddId){
+  setTimeout(()=>{
+    document.getElementById(ddId.replace('_dd','_list')).classList.remove('open');
+    // Restore display of current value
+    const hidden = document.getElementById(ddId.replace('_dd',''));
+    const input  = document.getElementById(ddId.replace('_dd','_input'));
+    if(!hidden.value) input.value='';
+  }, 150);
+}
+
+function rc_ddSelect(ddId, val, placeholder){
+  const hidden = document.getElementById(ddId.replace('_dd',''));
+  const input  = document.getElementById(ddId.replace('_dd','_input'));
+  const list   = document.getElementById(ddId.replace('_dd','_list'));
+  hidden.value = val;
+  input.value  = val || '';
+  input.placeholder = val ? '' : `All ${placeholder.replace('All ','')}`;
+  list.classList.remove('open');
+  // Cascade: if company or brand/store changed, re-populate dependents
+  rc_cascadeFilters();
+  rc_render();
+}
+
+
+function rc_cascadeFilters(){
+  const agencyVal = document.getElementById('rc_agency').value;
+  const brandVal  = document.getElementById('rc_brand').value;
+
+  let scoped = rc_data;
+  if(agencyVal) scoped = scoped.filter(r=>r.agency===agencyVal);
+  if(rc_selectedStores.size) scoped = scoped.filter(r=>rc_selectedStores.has(r.schedStoreCode));
+
+  const stores    = [...new Set(rc_data.filter(r=>!agencyVal||r.agency===agencyVal).map(r=>r.schedStoreCode).filter(Boolean))].sort();
+  const campaigns = [...new Set(scoped.map(r=>r.campaignName).filter(Boolean))].sort();
+  const brands    = [...new Set(scoped.map(r=>r.schedBrand).filter(Boolean))].sort();
+  const promoters = [...new Set(scoped.map(r=>r.promoter).filter(Boolean))].sort();
+
+  rc_storeItems = stores;
+  rc_storeRender();
+  rc_campItems = campaigns; rc_campRender();
+  rc_ddBuild('rc_brand_dd',    brands,    'All brands');
+  rc_ddBuild('rc_promoter_dd', promoters, 'All promoters');
+
+  // Remove selected stores no longer in list
+  rc_selectedStores.forEach(s=>{ if(!stores.includes(s)) rc_selectedStores.delete(s); });
+  rc_storeUpdateLabel();
+  if(brandVal && !brands.includes(brandVal)){ document.getElementById('rc_brand').value=''; document.getElementById('rc_brand_input').value=''; }
+}
+
+function rc_populateCampaigns(){
+  rc_excludedCampaigns = new Set();
+  const campaigns = [...new Set(rc_data.map(r=>r.campaignName).filter(Boolean))].sort();
+  rc_campItems = campaigns;
+  rc_campRender();
+  rc_campUpdateLabel();
+  const bar = document.getElementById('rc_campaign_bar');
+  if(bar) bar.style.display='none';
+}
+
+let rc_campItems = [];
+let rc_campOpen = false;
+
+function rc_campToggleOpen(){
+  rc_campOpen = !rc_campOpen;
+  const list = document.getElementById('rc_campaign_list');
+  if(rc_campOpen){ list.classList.add('open'); rc_campRender(); }
+  else list.classList.remove('open');
+}
+
+function rc_campClose(){
+  rc_campOpen = false;
+  document.getElementById('rc_campaign_list').classList.remove('open');
+}
+
+function rc_campRender(){
+  const list = document.getElementById('rc_campaign_list');
+  if(!rc_campItems.length){ list.innerHTML='<div class="rc-dd-none">No campaigns</div>'; return; }
+  list.innerHTML = rc_campItems.map(c => {
+    const excluded = rc_excludedCampaigns.has(c);
+    return `<div class="rc-dd-item" style="${excluded?'color:var(--red);text-decoration:line-through;background:#fff5f5;':''}" onmousedown="rc_campToggle('${c.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="${c}">
+      <span style="display:inline-flex;align-items:center;gap:6px;">
+        <span style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${excluded?'var(--red)':'var(--g300)'};background:${excluded?'#fee2e2':'#fff'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;">
+          ${excluded?'<svg width="9" height="9" viewBox="0 0 10 10" fill="var(--red)"><path d="M1 1l8 8M9 1l-8 8" stroke="var(--red)" stroke-width="1.5"/></svg>':''}
+        </span>
+        ${c}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function rc_campToggle(name){
+  if(rc_excludedCampaigns.has(name)) rc_excludedCampaigns.delete(name);
+  else rc_excludedCampaigns.add(name);
+  rc_campRender();
+  rc_campUpdateLabel();
+  rc_render();
+}
+
+function rc_campUpdateLabel(){
+  const label = document.getElementById('rc_campaign_label');
+  const trigger = document.getElementById('rc_campaign_trigger');
+  if(!label||!trigger) return;
+  const n = rc_excludedCampaigns.size;
+  if(!n){
+    label.textContent = 'All campaigns';
+    trigger.style.borderColor = 'var(--g300)';
+    trigger.style.color = 'var(--g600)';
+  } else {
+    label.textContent = `${n} excluded`;
+    trigger.style.borderColor = 'var(--red)';
+    trigger.style.color = 'var(--red)';
+  }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if(!e.target.closest('#rc_campaign_dd')) rc_campClose();
+  if(!e.target.closest('#rc_store_dd')) rc_storeClose();
+});
+
+// ── Store multi-select ───────────────────────────────────────────────────────
+let rc_storeItems = [];
+let rc_selectedStores = new Set();
+let rc_storeOpen = false;
+
+function rc_storeToggleOpen(){
+  rc_storeOpen = !rc_storeOpen;
+  const list = document.getElementById('rc_store_list');
+  if(rc_storeOpen){
+    list.classList.add('open');
+    rc_storeRender();
+    setTimeout(()=>{ const s=document.getElementById('rc_store_search'); if(s) s.focus(); },50);
+  } else {
+    list.classList.remove('open');
+  }
+}
+
+function rc_storeClose(){
+  rc_storeOpen = false;
+  document.getElementById('rc_store_list').classList.remove('open');
+  const s = document.getElementById('rc_store_search');
+  if(s) s.value='';
+}
+
+function rc_storeRender(){
+  const items = document.getElementById('rc_store_items');
+  if(!items) return;
+  const q = (document.getElementById('rc_store_search')?.value||'').toLowerCase();
+  const filtered = q ? rc_storeItems.filter(s=>s.toLowerCase().includes(q)) : rc_storeItems;
+  if(!filtered.length){ items.innerHTML='<div class="rc-dd-none">No results</div>'; return; }
+  items.innerHTML = filtered.map(s => {
+    const selected = rc_selectedStores.has(s);
+    const label = s.toUpperCase();
+    return `<div class="rc-dd-item" style="${selected?'background:#eff6ff;color:var(--blue);font-weight:600;':''}" onmousedown="rc_storeToggle('${s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+      <span style="display:inline-flex;align-items:center;gap:6px;">
+        <span style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${selected?'var(--blue)':'var(--g300)'};background:${selected?'var(--blue)':'#fff'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+          ${selected?'<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>':''}
+        </span>
+        ${label}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function rc_storeToggle(name){
+  if(rc_selectedStores.has(name)) rc_selectedStores.delete(name);
+  else rc_selectedStores.add(name);
+  rc_storeRender();
+  rc_storeUpdateLabel();
+  rc_cascadeFilters();
+  rc_render();
+}
+
+function rc_storeUpdateLabel(){
+  const label = document.getElementById('rc_store_label');
+  const trigger = document.getElementById('rc_store_trigger');
+  if(!label||!trigger) return;
+  const n = rc_selectedStores.size;
+  if(!n){
+    label.textContent = 'All stores';
+    trigger.style.borderColor = 'var(--g300)';
+    trigger.style.color = 'var(--g600)';
+  } else if(n === 1){
+    label.textContent = [...rc_selectedStores][0].toUpperCase();
+    trigger.style.borderColor = 'var(--blue)';
+    trigger.style.color = 'var(--blue)';
+  } else {
+    label.textContent = `${n} stores`;
+    trigger.style.borderColor = 'var(--blue)';
+    trigger.style.color = 'var(--blue)';
+  }
+}
+
 function rc_populateFilters(){
-  const agencies  = [...new Set(rc_data.map(r=>r.agency).filter(Boolean))].sort();
-  const stores    = [...new Set(rc_data.map(r=>r.schedStoreCode).filter(Boolean))].sort();
-  const brands    = [...new Set(rc_data.map(r=>r.schedBrand).filter(Boolean))].sort();
-  const promoters = [...new Set(rc_data.map(r=>r.promoter).filter(Boolean))].sort();
+  const agencies = [...new Set(rc_data.map(r=>r.agency).filter(Boolean))].sort();
 
   const ag = document.getElementById('rc_agency');
   if(ag){
     const cur = ag.value;
-    // Map agency code (e.g. "FR") -> company name (e.g. "GLOBE TRAVEL RETAIL FR")
     const codeToName = {};
     (allCo||[]).forEach(c=>{
       const m = c.name.match(/(?:GLOBE TRAVEL RETAIL|GLOBE TR)\s+(\w+)/i);
@@ -967,51 +1283,26 @@ function rc_populateFilters(){
     ag.innerHTML = '<option value="">All companies</option>' +
       agencies.map(a=>`<option value="${a}"${a===cur?' selected':''}>${codeToName[a.toUpperCase()]||a}</option>`).join('');
     ag.style.display = agencies.length ? '' : 'none';
-    ag.onchange = rc_render;
+    ag.onchange = ()=>{ rc_cascadeFilters(); rc_render(); };
   }
 
-  const ss = document.getElementById('rc_store');
-  if(ss){
-    const cur = ss.value;
-    ss.innerHTML = '<option value="">All stores</option>' +
-      stores.map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
-    ss.onchange = rc_render;
-  }
-
-  const bs = document.getElementById('rc_brand');
-  if(bs){
-    const cur = bs.value;
-    bs.innerHTML = '<option value="">All brands</option>' +
-      brands.map(b=>`<option value="${b}"${b===cur?' selected':''}>${b}</option>`).join('');
-    bs.style.display = '';
-    bs.onchange = rc_render;
-  }
-
-  const pr = document.getElementById('rc_promoter');
-  if(pr){
-    const cur = pr.value;
-    pr.innerHTML = '<option value="">All promoters</option>' +
-      promoters.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
-    pr.onchange = rc_render;
-  }
-
-  const stEl = document.getElementById('rc_status');
-  if(stEl) stEl.onchange = rc_render;
+  // Build cascaded dropdowns
+  rc_cascadeFilters();
 }
 
 function rc_render(){
-  const filterAgency   = document.getElementById('rc_agency')?.value   || '';
-  const filterStore    = document.getElementById('rc_store')?.value    || '';
-  const filterBrand    = document.getElementById('rc_brand')?.value    || '';
-  const filterPromoter = document.getElementById('rc_promoter')?.value || '';
-  const filterStatus   = document.getElementById('rc_status')?.value   || '';
+  const filterAgency   = document.getElementById('rc_agency')?.value    || '';
+  const filterBrand    = document.getElementById('rc_brand')?.value     || '';
+  const filterPromoter = document.getElementById('rc_promoter')?.value  || '';
+  const filterStatus   = document.getElementById('rc_status')?.value    || '';
 
   let rows = rc_data.filter(r => {
-    if(filterAgency   && r.agency     !== filterAgency)   return false;
-    if(filterStore    && r.schedStoreCode !== filterStore)    return false;
-    if(filterBrand    && r.schedBrand !== filterBrand)    return false;
-    if(filterPromoter && r.promoter   !== filterPromoter) return false;
-    if(filterStatus   && r.status     !== filterStatus)   return false;
+    if(filterAgency   && r.agency         !== filterAgency)   return false;
+    if(rc_selectedStores.size && !rc_selectedStores.has(r.schedStoreCode)) return false;
+    if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
+    if(filterPromoter && r.promoter       !== filterPromoter) return false;
+    if(filterStatus   && r.status         !== filterStatus)   return false;
+    if(rc_excludedCampaigns.size && rc_excludedCampaigns.has(r.campaignName)) return false;
     return true;
   });
 
@@ -1028,18 +1319,26 @@ function rc_render(){
   const totalPieces   = rows.reduce((n,r)=>n+(r.pieces||0),0);
   const totalTurnover = rows.reduce((n,r)=>n+(r.turnover||0),0);
 
+  const curStatus = document.getElementById('rc_status')?.value || '';
   document.getElementById('rc_stats').innerHTML = [
-    { val: total,    label:'Promoters', col:'var(--blue)',  bg:'#fff' },
-    { val: complete, label:'Reported',  col:'var(--green)', bg:'var(--green-light)' },
-    { val: partial,  label:'Partial',   col:'var(--amber)', bg:'var(--amber-light)' },
-    { val: missing,  label:'Missing',   col:'var(--red)',   bg:'var(--red-light)' },
-    { val: pct+'%',  label:'Compliance',col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)', bg:'var(--g50)' },
-    { val: totalPieces.toLocaleString(),   label:'Pieces sold', col:'var(--g700)', bg:'var(--g50)' },
-    { val: totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}), label:'Turnover', col:'var(--g900)', bg:'var(--g50)' },
-  ].map(s=>`<div style="background:${s.bg};border:1px solid var(--g200);border-radius:8px;padding:8px 16px;display:flex;flex-direction:column;gap:1px;min-width:95px;box-shadow:0 1px 3px rgba(0,0,0,.05);">
-    <span style="font-size:20px;font-weight:800;color:${s.col};font-family:monospace;">${s.val}</span>
-    <span style="font-size:10.5px;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">${s.label}</span>
-  </div>`).join('');
+    { val: total,    label:'Promoters',  col:'var(--blue)',  bg:'#fff',               status:'' },
+    { val: complete, label:'Reported',   col:'var(--green)', bg:'var(--green-light)', status:'complete' },
+    { val: partial,  label:'Partial',    col:'var(--amber)', bg:'var(--amber-light)', status:'partial' },
+    { val: missing,  label:'Missing',    col:'var(--red)',   bg:'var(--red-light)',   status:'missing' },
+    { val: pct+'%',  label:'Compliance', col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)', bg:'var(--g50)', status:null },
+    { val: totalPieces.toLocaleString(),   label:'Pieces sold', col:'var(--g700)', bg:'var(--g50)', status:null },
+    { val: totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}), label:'Turnover', col:'var(--g900)', bg:'var(--g50)', status:null },
+  ].map(s => {
+    const isClickable = s.status !== null;
+    const isActive    = isClickable && curStatus === s.status && s.status !== '';
+    const outline     = isActive ? `box-shadow:0 0 0 2.5px ${s.col};` : '';
+    const cursor      = isClickable && s.status !== '' ? 'cursor:pointer;' : '';
+    const onclick     = isClickable && s.status !== '' ? `onclick="rc_toggleStatus('${s.status}')"` : '';
+    return `<div ${onclick} style="background:${s.bg};border:1px solid var(--g200);border-radius:8px;padding:8px 16px;display:flex;flex-direction:column;gap:1px;min-width:95px;box-shadow:0 1px 3px rgba(0,0,0,.05);${outline}${cursor}transition:box-shadow .15s;">
+      <span style="font-size:20px;font-weight:800;color:${s.col};font-family:monospace;">${s.val}</span>
+      <span style="font-size:10.5px;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">${s.label}${isActive?' ✕':''}</span>
+    </div>`;
+  }).join('');
 
   if(!rows.length){
     document.getElementById('rc_area').innerHTML = '<div style="padding:48px;text-align:center;color:var(--g400);">No results match these filters.</div>';
