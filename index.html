@@ -249,6 +249,12 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
         </div>
       </div>
 
+      <div class="rc-dd" id="rc_client_dd">
+        <input class="rc-dd-input" id="rc_client_input" placeholder="All clients" autocomplete="off" oninput="rc_ddFilter('rc_client_dd')" onfocus="rc_ddOpen('rc_client_dd')" onblur="rc_ddBlur('rc_client_dd')" style="min-width:130px;">
+        <div class="rc-dd-list" id="rc_client_list"></div>
+        <input type="hidden" id="rc_client">
+      </div>
+
       <div class="rc-dd" id="rc_brand_dd">
         <input class="rc-dd-input" id="rc_brand_input" placeholder="All brands" autocomplete="off" oninput="rc_ddFilter('rc_brand_dd')" onfocus="rc_ddOpen('rc_brand_dd')" onblur="rc_ddBlur('rc_brand_dd')">
         <div class="rc-dd-list" id="rc_brand_list"></div>
@@ -800,6 +806,7 @@ function rc_exportExcel(){
   if(!rc_data.length){ toast('No data to export','error'); return; }
 
   const filterAgency   = document.getElementById('rc_agency')?.value   || '';
+  const filterClient   = document.getElementById('rc_client')?.value   || '';
   const filterBrand    = document.getElementById('rc_brand')?.value    || '';
   const filterPromoter = document.getElementById('rc_promoter')?.value || '';
   const filterStatus   = document.getElementById('rc_status')?.value   || '';
@@ -807,6 +814,7 @@ function rc_exportExcel(){
   let rows = rc_data.filter(r => {
     if(filterAgency   && r.agency         !== filterAgency)   return false;
     if(rc_selectedStores.size && !rc_selectedStores.has(r.schedStoreCode)) return false;
+    if(filterClient   && r.schedClient    !== filterClient)   return false;
     if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
     if(filterPromoter && r.promoter       !== filterPromoter) return false;
     if(filterStatus   && r.status         !== filterStatus)   return false;
@@ -825,6 +833,7 @@ function rc_exportExcel(){
     'Mission': r.missionId ?? '',
     'Promoter': r.promoter,
     'Sched. Store': r.schedStore || '',
+    'Client': r.schedClient || '',
     'Sched. Brand': r.schedBrand || '',
     'Questionnaire': r.hasQ ? 'Yes' : 'No',
     'Sales': r.hasS ? 'Yes' : 'No',
@@ -861,7 +870,7 @@ function rc_resetFilters(){
   if(stEl) stEl.value = '';
   rc_selectedStores = new Set();
   rc_storeUpdateLabel();
-  ['rc_brand','rc_promoter'].forEach(id=>{
+  ['rc_brand','rc_promoter','rc_client'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value='';
     const inp = document.getElementById(id+'_input');
@@ -1001,6 +1010,7 @@ async function rc_load(){
         schedStore: r.pos || r.store_code,
         schedStoreCode: r.store_code,
         schedBrand: r.brand,
+        schedClient: r.client,
         campaignName: r.campaign_name,
         missionId: r.mission_id,
         agency: r.agency,
@@ -1040,7 +1050,7 @@ function rc_timeAgo(isoStr){
 }
 
 // ── Searchable dropdown helpers ──────────────────────────────────────────────
-const rc_ddData = { rc_brand_dd:[], rc_store_dd:[], rc_promoter_dd:[] };
+const rc_ddData = { rc_brand_dd:[], rc_store_dd:[], rc_promoter_dd:[], rc_client_dd:[] };
 
 function rc_ddBuild(ddId, items, placeholder){
   rc_ddData[ddId] = items;
@@ -1104,29 +1114,33 @@ function rc_ddSelect(ddId, val, placeholder){
 }
 
 
+
 function rc_cascadeFilters(){
   const agencyVal = document.getElementById('rc_agency').value;
+  const clientVal = document.getElementById('rc_client')?.value || '';
   const brandVal  = document.getElementById('rc_brand').value;
 
   let scoped = rc_data;
   if(agencyVal) scoped = scoped.filter(r=>r.agency===agencyVal);
   if(rc_selectedStores.size) scoped = scoped.filter(r=>rc_selectedStores.has(r.schedStoreCode));
+  if(clientVal) scoped = scoped.filter(r=>r.schedClient===clientVal);
 
   const stores    = [...new Set(rc_data.filter(r=>!agencyVal||r.agency===agencyVal).map(r=>r.schedStoreCode).filter(Boolean))].sort();
+  const clients   = [...new Set(rc_data.filter(r=>(!agencyVal||r.agency===agencyVal)&&(!rc_selectedStores.size||rc_selectedStores.has(r.schedStoreCode))).map(r=>r.schedClient).filter(Boolean))].sort();
   const campaigns = [...new Set(scoped.map(r=>r.campaignName).filter(Boolean))].sort();
   const brands    = [...new Set(scoped.map(r=>r.schedBrand).filter(Boolean))].sort();
   const promoters = [...new Set(scoped.map(r=>r.promoter).filter(Boolean))].sort();
 
-  rc_storeItems = stores;
-  rc_storeRender();
+  rc_storeItems = stores; rc_storeRender();
+  rc_ddBuild('rc_client_dd',   clients,   'All clients');
   rc_campItems = campaigns; rc_campRender();
   rc_ddBuild('rc_brand_dd',    brands,    'All brands');
   rc_ddBuild('rc_promoter_dd', promoters, 'All promoters');
 
-  // Remove selected stores no longer in list
   rc_selectedStores.forEach(s=>{ if(!stores.includes(s)) rc_selectedStores.delete(s); });
   rc_storeUpdateLabel();
-  if(brandVal && !brands.includes(brandVal)){ document.getElementById('rc_brand').value=''; document.getElementById('rc_brand_input').value=''; }
+  if(clientVal && !clients.includes(clientVal)){ document.getElementById('rc_client').value=''; document.getElementById('rc_client_input').value=''; }
+  if(brandVal  && !brands.includes(brandVal)){   document.getElementById('rc_brand').value='';  document.getElementById('rc_brand_input').value=''; }
 }
 
 function rc_populateCampaigns(){
@@ -1297,6 +1311,7 @@ function rc_populateFilters(){
 
 function rc_render(){
   const filterAgency   = document.getElementById('rc_agency')?.value    || '';
+  const filterClient   = document.getElementById('rc_client')?.value    || '';
   const filterBrand    = document.getElementById('rc_brand')?.value     || '';
   const filterPromoter = document.getElementById('rc_promoter')?.value  || '';
   const filterStatus   = document.getElementById('rc_status')?.value    || '';
@@ -1304,6 +1319,7 @@ function rc_render(){
   let rows = rc_data.filter(r => {
     if(filterAgency   && r.agency         !== filterAgency)   return false;
     if(rc_selectedStores.size && !rc_selectedStores.has(r.schedStoreCode)) return false;
+    if(filterClient   && r.schedClient    !== filterClient)   return false;
     if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
     if(filterPromoter && r.promoter       !== filterPromoter) return false;
     if(filterStatus   && r.status         !== filterStatus)   return false;
@@ -1386,7 +1402,7 @@ function rc_render(){
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Mission</th>
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Promoter</th>
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Store</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Brand</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Client / Brand</th>
       <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Quest.</th>
       <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sales</th>
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;width:90px;max-width:90px;">Reported Store(s)</th>
@@ -1411,7 +1427,10 @@ function rc_render(){
         <td style="padding:8px 12px;font-family:monospace;font-size:11px;color:var(--g500);">${r.missionId??'\u2014'}</td>
         <td style="padding:8px 12px;font-weight:600;${promoterColor}">${r.promoter}${promoterSuffix}</td>
         <td style="padding:8px 12px;font-weight:600;max-width:320px;white-space:normal;line-height:1.3;" title="${r.schedStore||''}">${r.schedStore||'\u2014'}</td>
-        <td style="padding:8px 12px;color:var(--g600);">${r.schedBrand||'\u2014'}</td>
+        <td style="padding:8px 12px;">
+          ${r.schedClient ? `<div style="font-size:11px;color:var(--g400);line-height:1.3;">${r.schedClient}</div>` : ''}
+          <div style="font-weight:600;color:var(--g900);line-height:1.3;">${r.schedBrand||'\u2014'}</div>
+        </td>
         <td style="padding:8px 12px;text-align:center;">${check(r.hasQ)}</td>
         <td style="padding:8px 12px;text-align:center;">${check(r.hasS)}</td>
         <td style="padding:8px 12px;font-family:monospace;width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${mismatchTag(r.schedStoreCode, r.reportedStores)}</td>
