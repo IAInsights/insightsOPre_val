@@ -237,6 +237,19 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
         <option value="">All companies</option>
       </select>
 
+      <!-- Campaign inclusion multi-select -->
+      <div class="rc-dd" id="rc_incl_camp_dd" style="position:relative;">
+        <div id="rc_incl_camp_trigger" onclick="rc_inclCampToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:160px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
+          <span id="rc_incl_camp_label">All campaigns</span>
+        </div>
+        <div class="rc-dd-list" id="rc_incl_camp_list" style="min-width:280px;padding-top:0;">
+          <div style="padding:6px 8px;border-bottom:1px solid var(--g100);position:sticky;top:0;background:#fff;z-index:2;">
+            <input id="rc_incl_camp_search" type="text" placeholder="Search campaigns…" oninput="rc_inclCampRender()" onmousedown="event.stopPropagation()" style="width:100%;height:26px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:11px;outline:none;box-sizing:border-box;">
+          </div>
+          <div id="rc_incl_camp_items"></div>
+        </div>
+      </div>
+
       <div class="rc-dd" id="rc_store_dd" style="position:relative;">
         <div id="rc_store_trigger" onclick="rc_storeToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:130px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
           <span id="rc_store_label">All stores</span>
@@ -261,13 +274,6 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
         <input type="hidden" id="rc_brand">
       </div>
 
-      <div class="rc-dd" id="rc_campaign_dd" style="position:relative;">
-        <div id="rc_campaign_trigger" onclick="rc_campToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:160px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
-          <span id="rc_campaign_label">All campaigns</span>
-        </div>
-        <div class="rc-dd-list" id="rc_campaign_list" style="min-width:260px;"></div>
-      </div>
-
       <div class="rc-dd" id="rc_promoter_dd">
         <input class="rc-dd-input" id="rc_promoter_input" placeholder="All promoters" autocomplete="off" oninput="rc_ddFilter('rc_promoter_dd')" onfocus="rc_ddOpen('rc_promoter_dd')" onblur="rc_ddBlur('rc_promoter_dd')">
         <div class="rc-dd-list" id="rc_promoter_list"></div>
@@ -290,9 +296,10 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
       </div>
     </div>
 
-    <div id="rc_campaign_bar" style="display:none;background:#f8f9fb;border-bottom:1px solid var(--g200);padding:6px 24px;flex-shrink:0;flex-wrap:wrap;gap:6px;align-items:center;"></div>
-
-    <div id="rc_stats" style="display:flex;gap:10px;padding:10px 24px;flex-shrink:0;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);"></div>
+    <div id="rc_campaign_bar" style="display:none;"></div>
+    <div id="rc_stats" style="display:flex;gap:10px;padding:10px 24px;flex-shrink:0;flex-wrap:wrap;align-items:center;background:#fff;border-bottom:1px solid var(--g200);">
+      <div id="rc_kpis" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+    </div>
 
     <div style="flex:1;overflow:hidden;padding:16px 24px;display:flex;min-width:0;">
       <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:auto;width:100%;min-width:0;">
@@ -787,7 +794,6 @@ async function saveContact(){
 // ── Reporting Check ─────────────────────────────────────────────────────────
 let rc_data = [];
 let rc_initialized = false;
-let rc_excludedCampaigns = new Set();
 let rc_dateTimer = null;
 
 function rc_dateChanged(){
@@ -859,9 +865,9 @@ function rc_exportExcel(){
 }
 
 function rc_resetFilters(){
-  rc_excludedCampaigns = new Set();
-  rc_campUpdateLabel();
-  rc_campRender();
+  rc_selectedCampaigns = new Set();
+  rc_inclCampUpdateLabel();
+  rc_inclCampRender();
   ['rc_agency'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = '';
@@ -904,7 +910,7 @@ async function rc_load(){
       <div style="width:28px;height:28px;border:2px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px;"></div>
       Loading…
     </div>`;
-  document.getElementById('rc_stats').innerHTML = '';
+  document.getElementById('rc_kpis').innerHTML = '';
   document.getElementById('rc_subline_text').textContent = '';
   document.getElementById('rc_sync_badge').innerHTML = '';
 
@@ -1133,7 +1139,7 @@ function rc_cascadeFilters(){
 
   rc_storeItems = stores; rc_storeRender();
   rc_ddBuild('rc_client_dd',   clients,   'All clients');
-  rc_campItems = campaigns; rc_campRender();
+  rc_inclCampItems = campaigns; rc_inclCampRender(); rc_inclCampUpdateLabel();
   rc_ddBuild('rc_brand_dd',    brands,    'All brands');
   rc_ddBuild('rc_promoter_dd', promoters, 'All promoters');
 
@@ -1144,39 +1150,55 @@ function rc_cascadeFilters(){
 }
 
 function rc_populateCampaigns(){
-  rc_excludedCampaigns = new Set();
+  rc_selectedCampaigns = new Set();
   const campaigns = [...new Set(rc_data.map(r=>r.campaignName).filter(Boolean))].sort();
-  rc_campItems = campaigns;
-  rc_campRender();
-  rc_campUpdateLabel();
+  rc_inclCampItems = campaigns;
+  rc_inclCampRender();
+  rc_inclCampUpdateLabel();
   const bar = document.getElementById('rc_campaign_bar');
   if(bar) bar.style.display='none';
 }
 
-let rc_campItems = [];
-let rc_campOpen = false;
+document.addEventListener('click', e => {
+  if(!e.target.closest('#rc_store_dd')) rc_storeClose();
+  if(!e.target.closest('#rc_incl_camp_dd')) rc_inclCampClose();
+});
 
-function rc_campToggleOpen(){
-  rc_campOpen = !rc_campOpen;
-  const list = document.getElementById('rc_campaign_list');
-  if(rc_campOpen){ list.classList.add('open'); rc_campRender(); }
-  else list.classList.remove('open');
+// ── Campaign INCLUSION multi-select ─────────────────────────────────────────
+let rc_inclCampItems = [];
+let rc_selectedCampaigns = new Set(); // empty = all included
+let rc_inclCampOpen = false;
+
+function rc_inclCampToggleOpen(){
+  rc_inclCampOpen = !rc_inclCampOpen;
+  const list = document.getElementById('rc_incl_camp_list');
+  if(rc_inclCampOpen){
+    list.classList.add('open');
+    rc_inclCampRender();
+    setTimeout(()=>{ const s=document.getElementById('rc_incl_camp_search'); if(s) s.focus(); },50);
+  } else list.classList.remove('open');
 }
 
-function rc_campClose(){
-  rc_campOpen = false;
-  document.getElementById('rc_campaign_list').classList.remove('open');
+function rc_inclCampClose(){
+  rc_inclCampOpen = false;
+  const list = document.getElementById('rc_incl_camp_list');
+  if(list) list.classList.remove('open');
+  const s = document.getElementById('rc_incl_camp_search');
+  if(s) s.value='';
 }
 
-function rc_campRender(){
-  const list = document.getElementById('rc_campaign_list');
-  if(!rc_campItems.length){ list.innerHTML='<div class="rc-dd-none">No campaigns</div>'; return; }
-  list.innerHTML = rc_campItems.map(c => {
-    const excluded = rc_excludedCampaigns.has(c);
-    return `<div class="rc-dd-item" style="${excluded?'color:var(--red);text-decoration:line-through;background:#fff5f5;':''}" onmousedown="rc_campToggle('${c.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="${c}">
+function rc_inclCampRender(){
+  const items = document.getElementById('rc_incl_camp_items');
+  if(!items) return;
+  const q = (document.getElementById('rc_incl_camp_search')?.value||'').toLowerCase();
+  const filtered = q ? rc_inclCampItems.filter(c=>c.toLowerCase().includes(q)) : rc_inclCampItems;
+  if(!filtered.length){ items.innerHTML='<div class="rc-dd-none">No campaigns</div>'; return; }
+  items.innerHTML = filtered.map(c => {
+    const selected = rc_selectedCampaigns.size===0 || rc_selectedCampaigns.has(c);
+    return `<div class="rc-dd-item" style="${selected?'background:#eff6ff;color:var(--blue);font-weight:500;':''}" onmousedown="rc_inclCampToggle('${c.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
       <span style="display:inline-flex;align-items:center;gap:6px;">
-        <span style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${excluded?'var(--red)':'var(--g300)'};background:${excluded?'#fee2e2':'#fff'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;">
-          ${excluded?'<svg width="9" height="9" viewBox="0 0 10 10" fill="var(--red)"><path d="M1 1l8 8M9 1l-8 8" stroke="var(--red)" stroke-width="1.5"/></svg>':''}
+        <span style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${selected?'var(--blue)':'var(--g300)'};background:${selected?'var(--blue)':'#fff'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;">
+          ${selected?'<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>':''}
         </span>
         ${c}
       </span>
@@ -1184,35 +1206,35 @@ function rc_campRender(){
   }).join('');
 }
 
-function rc_campToggle(name){
-  if(rc_excludedCampaigns.has(name)) rc_excludedCampaigns.delete(name);
-  else rc_excludedCampaigns.add(name);
-  rc_campRender();
-  rc_campUpdateLabel();
+function rc_inclCampToggle(name){
+  // First click initializes selection to all, then toggles
+  if(rc_selectedCampaigns.size===0){
+    rc_inclCampItems.forEach(c=>rc_selectedCampaigns.add(c));
+  }
+  if(rc_selectedCampaigns.has(name)) rc_selectedCampaigns.delete(name);
+  else rc_selectedCampaigns.add(name);
+  // If all selected, reset to empty (= all)
+  if(rc_selectedCampaigns.size === rc_inclCampItems.length) rc_selectedCampaigns.clear();
+  rc_inclCampRender();
+  rc_inclCampUpdateLabel();
   rc_render();
 }
 
-function rc_campUpdateLabel(){
-  const label = document.getElementById('rc_campaign_label');
-  const trigger = document.getElementById('rc_campaign_trigger');
+function rc_inclCampUpdateLabel(){
+  const label = document.getElementById('rc_incl_camp_label');
+  const trigger = document.getElementById('rc_incl_camp_trigger');
   if(!label||!trigger) return;
-  const n = rc_excludedCampaigns.size;
+  const n = rc_selectedCampaigns.size;
   if(!n){
     label.textContent = 'All campaigns';
     trigger.style.borderColor = 'var(--g300)';
     trigger.style.color = 'var(--g600)';
   } else {
-    label.textContent = `${n} excluded`;
-    trigger.style.borderColor = 'var(--red)';
-    trigger.style.color = 'var(--red)';
+    label.textContent = `${n} campaign${n>1?'s':''}`;
+    trigger.style.borderColor = 'var(--blue)';
+    trigger.style.color = 'var(--blue)';
   }
 }
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', e => {
-  if(!e.target.closest('#rc_campaign_dd')) rc_campClose();
-  if(!e.target.closest('#rc_store_dd')) rc_storeClose();
-});
 
 // ── Store multi-select ───────────────────────────────────────────────────────
 let rc_storeItems = [];
@@ -1323,7 +1345,7 @@ function rc_render(){
     if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
     if(filterPromoter && r.promoter       !== filterPromoter) return false;
     if(filterStatus   && r.status         !== filterStatus)   return false;
-    if(rc_excludedCampaigns.size && rc_excludedCampaigns.has(r.campaignName)) return false;
+    if(rc_selectedCampaigns.size && !rc_selectedCampaigns.has(r.campaignName)) return false;
     return true;
   });
 
@@ -1344,7 +1366,7 @@ function rc_render(){
   const totalTurnover = rows.reduce((n,r)=>n+(r.turnover||0),0);
 
   const curStatus = document.getElementById('rc_status')?.value || '';
-  document.getElementById('rc_stats').innerHTML = [
+  document.getElementById('rc_kpis').innerHTML = [
     { val: total,        label:'Promoters',      col:'var(--blue)',  bg:'#fff',               status:'' },
     { val: complete,     label:'Reported',        col:'var(--green)', bg:'var(--green-light)', status:'complete' },
     { val: partial,      label:'Partial',         col:'var(--amber)', bg:'var(--amber-light)', status:'partial' },
@@ -1402,7 +1424,7 @@ function rc_render(){
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Mission</th>
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Promoter</th>
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Store</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Client / Brand</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Client / <strong>Brand</strong> / Campaign</th>
       <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Quest.</th>
       <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sales</th>
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;width:90px;max-width:90px;">Reported Store(s)</th>
@@ -1429,7 +1451,8 @@ function rc_render(){
         <td style="padding:8px 12px;font-weight:600;max-width:320px;white-space:normal;line-height:1.3;" title="${r.schedStore||''}">${r.schedStore||'\u2014'}</td>
         <td style="padding:8px 12px;">
           ${r.schedClient ? `<div style="font-size:11px;color:var(--g400);line-height:1.3;">${r.schedClient}</div>` : ''}
-          <div style="font-weight:600;color:var(--g900);line-height:1.3;">${r.schedBrand||'\u2014'}</div>
+          <div style="font-weight:700;color:var(--g900);line-height:1.3;">${r.schedBrand||'\u2014'}</div>
+          ${r.campaignName ? `<div style="font-size:10.5px;color:var(--g400);line-height:1.3;margin-top:1px;">${r.campaignName}</div>` : ''}
         </td>
         <td style="padding:8px 12px;text-align:center;">${check(r.hasQ)}</td>
         <td style="padding:8px 12px;text-align:center;">${check(r.hasS)}</td>
