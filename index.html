@@ -1145,6 +1145,12 @@ function rc_cascadeFilters(){
 
   rc_selectedStores.forEach(s=>{ if(!stores.includes(s)) rc_selectedStores.delete(s); });
   rc_storeUpdateLabel();
+  // Prune selected campaigns no longer in list
+  if(rc_selectedCampaigns.size){
+    rc_selectedCampaigns.forEach(c=>{ if(!campaigns.includes(c)) rc_selectedCampaigns.delete(c); });
+    if(rc_selectedCampaigns.size === campaigns.length) rc_selectedCampaigns.clear();
+    rc_inclCampUpdateLabel();
+  }
   if(clientVal && !clients.includes(clientVal)){ document.getElementById('rc_client').value=''; document.getElementById('rc_client_input').value=''; }
   if(brandVal  && !brands.includes(brandVal)){   document.getElementById('rc_brand').value='';  document.getElementById('rc_brand_input').value=''; }
 }
