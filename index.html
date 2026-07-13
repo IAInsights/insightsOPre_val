@@ -302,7 +302,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
     </div>
 
     <div style="flex:1;overflow:hidden;padding:16px 24px;display:flex;min-width:0;">
-      <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:auto;width:100%;min-width:0;">
+      <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;width:100%;min-width:0;">
         <div style="padding:48px;text-align:center;color:var(--g400);">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--g300)" style="display:block;margin:0 auto 10px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
           Select a date range and click Load
@@ -916,15 +916,35 @@ async function rc_load(){
 
   try{
     const schedRows = await sbGet(
-      `GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_active,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`
+      `GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_sapcode,campaign_active,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`
     );
+
+    // Reporting Check only: hide excluded campaign types for every client
+    const EXCLUDED_CAMPAIGN_TERMS = [
+      'training',
+      'coaching',
+      'store check',
+      'atelier s'
+    ];
+
+    const reportingSchedRows = schedRows.filter(r => {
+      const campaign = String(r.campaign_name || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+
+      const isExcludedCampaign =
+        EXCLUDED_CAMPAIGN_TERMS.some(term => campaign.includes(term));
+
+      return !isExcludedCampaign;
+    });
 
     // Build pos_id → sector name map
     const storesWithSector = await sbGet('GI_stores?select=id,store,Sector_id');
     const sectorMap = new Map(allSectors.map(s=>[s.id, s.Name]));
     const posToSector = new Map(storesWithSector.map(s=>[s.id, sectorMap.get(s.Sector_id)||null]));
 
-    if(!schedRows.length){
+    if(!reportingSchedRows.length){
       document.getElementById('rc_area').innerHTML = '<div style="padding:48px;text-align:center;color:var(--g400);">No scheduled shifts found for this period.</div>';
       return;
     }
@@ -936,7 +956,7 @@ async function rc_load(){
     ]);
 
     const seen = new Set();
-    const deduped = schedRows.filter(r => {
+    const deduped = reportingSchedRows.filter(r => {
       if(EXCLUDED_ROLES.has(r.role)) return false;
       const key = `${r.day}|${r.store_code}|${(r.promoter_fullname||'').toUpperCase().trim()}`;
       if(seen.has(key)) return false;
@@ -1018,6 +1038,7 @@ async function rc_load(){
         schedBrand: r.brand,
         schedClient: r.client,
         campaignName: r.campaign_name,
+        campaignSapCode: r.campaign_sapcode,
         missionId: r.mission_id,
         agency: r.agency,
         hasQ, hasS,
@@ -1404,12 +1425,12 @@ function rc_render(){
   const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
 
   const badge = s => {
-    if(s==='complete')      return `<span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Reported</span>`;
-    if(s==='partial')       return `<span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ Partial</span>`;
-    if(s==='absent_backup') return `<span style="background:#fff7ed;color:#ea580c;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">🔄 Absent + Backup</span>`;
-    if(s==='absent')        return `<span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">🚫 Absent</span>`;
-    if(s==='pending')       return `<span style="background:var(--g100);color:var(--g500);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ En attente</span>`;
-    return `<span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ Missing</span>`;
+    if(s==='complete')      return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--green-light);color:var(--green);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Reported</span>`;
+    if(s==='partial')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--amber-light);color:var(--amber);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ Partial</span>`;
+    if(s==='absent_backup') return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:#fff7ed;color:#ea580c;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">🔄 Absent + Backup</span>`;
+    if(s==='absent')        return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--red-light);color:var(--red);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">🚫 Absent</span>`;
+    if(s==='pending')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--g100);color:var(--g500);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ En attente</span>`;
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--red-light);color:var(--red);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ Missing</span>`;
   };
   const check = ok => ok
     ? `<span style="color:var(--green);font-weight:800;font-size:14px;">\u2713</span>`
@@ -1424,20 +1445,32 @@ function rc_render(){
       : `<span title="${txt}">${txt}</span>`;
   };
 
-  let html = `<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px;">
+  let html = `<table style="width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px;">
+    <colgroup>
+      <col style="width:7%">
+      <col style="width:10%">
+      <col style="width:13%">
+      <col style="width:21%">
+      <col style="width:4.5%">
+      <col style="width:4.5%">
+      <col style="width:8%">
+      <col style="width:11%">
+      <col style="width:5.5%">
+      <col style="width:7%">
+      <col style="width:8.5%">
+    </colgroup>
     <thead><tr style="background:var(--g50);position:sticky;top:0;z-index:5;">
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Date</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Mission</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Promoter</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Store</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Client / <strong>Brand</strong> / Campaign</th>
-      <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Quest.</th>
-      <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sales</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;width:90px;max-width:90px;">Reported Store(s)</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Reported Brand(s)</th>
-      <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Pcs Sold</th>
-      <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Turnover</th>
-      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Status</th>
+      <th style="padding:8px 8px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Date / Mission</th>
+      <th style="padding:8px 8px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Promoter</th>
+      <th style="padding:8px 8px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sched. Store</th>
+      <th style="padding:8px 8px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Client / Brand / Campaign</th>
+      <th style="padding:8px 4px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Quest.</th>
+      <th style="padding:8px 4px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Sales</th>
+      <th style="padding:8px 6px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Reported Store</th>
+      <th style="padding:8px 6px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Reported Brand</th>
+      <th style="padding:8px 5px;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Pcs</th>
+      <th style="padding:8px 5px;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Turnover</th>
+      <th style="padding:8px 6px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--g600);border-bottom:2px solid var(--g200);background:var(--g50);position:sticky;top:0;z-index:5;">Status</th>
     </tr></thead><tbody>`;
 
   dates.forEach(day => {
@@ -1448,25 +1481,43 @@ function rc_render(){
       const isAbsentBackup = r.status === 'absent_backup';
       const promoterColor  = isAbsent ? 'color:var(--red);' : isAbsentBackup ? 'color:#ea580c;' : '';
       const promoterSuffix = isAbsent ? ' 🚫' : isAbsentBackup ? ' 🔄' : '';
+      const promoterParts  = String(r.promoter || '').trim().split(/\s+/).filter(Boolean);
+      const promoterFirst  = promoterParts.shift() || '—';
+      const promoterLast   = promoterParts.join(' ');
       const statusCell     = (isAbsent || isAbsentBackup) ? `<span style="color:var(--g300);">—</span>` : badge(r.status);
 
-      html += `<tr style="border-bottom:1px solid var(--g100);" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
-        <td style="padding:8px 12px;font-size:12px;color:var(--g600);">${r.day}</td>
-        <td style="padding:8px 12px;font-family:monospace;font-size:11px;color:var(--g500);">${r.missionId??'\u2014'}</td>
-        <td style="padding:8px 12px;font-weight:600;${promoterColor}">${r.promoter}${promoterSuffix}</td>
-        <td style="padding:8px 12px;font-weight:600;max-width:320px;white-space:normal;line-height:1.3;" title="${r.schedStore||''}">${r.schedStore||'\u2014'}</td>
-        <td style="padding:8px 12px;">
-          ${r.schedClient ? `<div style="font-size:11px;color:var(--g400);line-height:1.3;">${r.schedClient}</div>` : ''}
-          <div style="font-weight:700;color:var(--g900);line-height:1.3;">${r.schedBrand||'\u2014'}</div>
-          ${r.campaignName ? `<div style="font-size:10.5px;color:var(--g400);line-height:1.3;margin-top:1px;">${r.campaignName}</div>` : ''}
+      html += `<tr style="border-bottom:1px solid var(--g100);height:70px;" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
+        <td style="padding:9px 8px;vertical-align:middle;overflow-wrap:anywhere;">
+          <div style="font-size:11.5px;font-weight:800;color:var(--g900);line-height:1.25;">${r.day}</div>
+          <div style="font-family:monospace;font-size:9.5px;color:var(--g400);line-height:1.25;margin-top:3px;">Mission ${r.missionId??'\u2014'}</div>
         </td>
-        <td style="padding:8px 12px;text-align:center;">${check(r.hasQ)}</td>
-        <td style="padding:8px 12px;text-align:center;">${check(r.hasS)}</td>
-        <td style="padding:8px 12px;font-family:monospace;width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${mismatchTag(r.schedStoreCode, r.reportedStores)}</td>
-        <td style="padding:8px 12px;">${mismatchTag(r.schedBrand, r.reportedBrands)}</td>
-        <td style="padding:8px 12px;text-align:right;font-family:monospace;">${r.pieces!=null ? r.pieces.toLocaleString() : '\u2014'}</td>
-        <td style="padding:8px 12px;text-align:right;font-family:monospace;font-weight:600;">${r.turnover!=null ? r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}) : '\u2014'}</td>
-        <td style="padding:8px 12px;">${statusCell}</td>
+        <td style="padding:9px 8px;vertical-align:middle;line-height:1.2;overflow-wrap:anywhere;${promoterColor}">
+          <div style="font-size:12px;font-weight:700;">${promoterFirst}${!promoterLast ? promoterSuffix : ''}</div>
+          ${promoterLast ? `<div style="font-size:11px;font-weight:600;margin-top:2px;">${promoterLast}${promoterSuffix}</div>` : ''}
+        </td>
+        <td style="padding:9px 8px;font-size:11px;font-weight:650;white-space:normal;line-height:1.25;vertical-align:middle;overflow-wrap:anywhere;" title="${r.schedStore||''}">${r.schedStore||'\u2014'}</td>
+        <td style="padding:9px 8px;vertical-align:middle;overflow-wrap:anywhere;">
+          <div style="font-size:11px;color:var(--g900);line-height:1.25;">
+            ${r.schedClient ? `<span>${r.schedClient}</span>` : ''}
+            ${r.schedClient && r.schedBrand ? '<span> - </span>' : ''}
+            ${r.schedBrand
+              ? `<span style="font-weight:800;">${r.schedBrand}</span>`
+              : (!r.schedClient ? '<span>\u2014</span>' : '')}
+          </div>
+          ${r.campaignName
+            ? `<div style="font-size:9.5px;color:var(--g400);line-height:1.2;margin-top:3px;">${r.campaignName}</div>`
+            : ''}
+          ${r.campaignSapCode
+            ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${r.campaignSapCode}</div>`
+            : ''}
+        </td>
+        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasQ)}</td>
+        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasS)}</td>
+        <td style="padding:9px 6px;font-family:monospace;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${mismatchTag(r.schedStoreCode, r.reportedStores)}</td>
+        <td style="padding:9px 6px;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${mismatchTag(r.schedBrand, r.reportedBrands)}</td>
+        <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;white-space:nowrap;vertical-align:middle;">${r.pieces!=null ? r.pieces.toLocaleString() : '\u2014'}</td>
+        <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;font-weight:700;white-space:nowrap;vertical-align:middle;">${r.turnover!=null ? r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}) : '\u2014'}</td>
+        <td style="padding:9px 6px;white-space:normal;vertical-align:middle;overflow:visible;">${statusCell}</td>
       </tr>`;
     });
   });
