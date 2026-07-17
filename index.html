@@ -250,6 +250,16 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
         </div>
       </div>
 
+      <div class="rc-dd" id="rc_sap_dd">
+        <input class="rc-dd-input" id="rc_sap_input" placeholder="All SAP codes" autocomplete="off"
+          oninput="rc_ddFilter('rc_sap_dd')"
+          onfocus="rc_ddOpen('rc_sap_dd')"
+          onblur="rc_ddBlur('rc_sap_dd')"
+          style="min-width:125px;">
+        <div class="rc-dd-list" id="rc_sap_list"></div>
+        <input type="hidden" id="rc_sap">
+      </div>
+
       <div class="rc-dd" id="rc_store_dd" style="position:relative;">
         <div id="rc_store_trigger" onclick="rc_storeToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:130px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
           <span id="rc_store_label">All stores</span>
@@ -805,27 +815,18 @@ function rc_toggleStatus(status){
   const el = document.getElementById('rc_status');
   if(!el) return;
   el.value = el.value === status ? '' : status;
-  rc_render();
+  rc_filtersChanged();
 }
 
 function rc_exportExcel(){
   if(!rc_data.length){ toast('No data to export','error'); return; }
 
-  const filterAgency   = document.getElementById('rc_agency')?.value   || '';
-  const filterClient   = document.getElementById('rc_client')?.value   || '';
-  const filterBrand    = document.getElementById('rc_brand')?.value    || '';
-  const filterPromoter = document.getElementById('rc_promoter')?.value || '';
-  const filterStatus   = document.getElementById('rc_status')?.value   || '';
+  let rows = rc_getFilteredRows();
 
-  let rows = rc_data.filter(r => {
-    if(filterAgency   && r.agency         !== filterAgency)   return false;
-    if(rc_selectedStores.size && !rc_selectedStores.has(r.schedStoreCode)) return false;
-    if(filterClient   && r.schedClient    !== filterClient)   return false;
-    if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
-    if(filterPromoter && r.promoter       !== filterPromoter) return false;
-    if(filterStatus   && r.status         !== filterStatus)   return false;
-    return true;
-  });
+  if(!rows.length){
+    toast('No displayed data to export','error');
+    return;
+  }
 
   rows.sort((a,b) => {
     if(a.day !== b.day) return b.day.localeCompare(a.day);
@@ -841,6 +842,8 @@ function rc_exportExcel(){
     'Sched. Store': r.schedStore || '',
     'Client': r.schedClient || '',
     'Sched. Brand': r.schedBrand || '',
+    'Campaign': r.campaignName || '',
+    'Campaign SAP Code': r.campaignSapCode || '',
     'Questionnaire': r.hasQ ? 'Yes' : 'No',
     'Sales': r.hasS ? 'Yes' : 'No',
     'Reported Store(s)': r.reportedStores.join(', '),
@@ -852,8 +855,21 @@ function rc_exportExcel(){
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
   ws['!cols'] = [
-    {wch:11},{wch:9},{wch:22},{wch:32},{wch:18},
-    {wch:13},{wch:8},{wch:18},{wch:18},{wch:11},{wch:11},{wch:11}
+    {wch:11},  // Date
+    {wch:10},  // Mission
+    {wch:22},  // Promoter
+    {wch:32},  // Scheduled Store
+    {wch:20},  // Client
+    {wch:18},  // Scheduled Brand
+    {wch:42},  // Campaign
+    {wch:20},  // Campaign SAP Code
+    {wch:14},  // Questionnaire
+    {wch:10},  // Sales
+    {wch:24},  // Reported Stores
+    {wch:24},  // Reported Brands
+    {wch:12},  // Pieces Sold
+    {wch:14},  // Turnover
+    {wch:18}   // Status
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Reporting Check');
@@ -866,6 +882,7 @@ function rc_exportExcel(){
 
 function rc_resetFilters(){
   rc_selectedCampaigns = new Set();
+  rc_noCampaignsSelected = false;
   rc_inclCampUpdateLabel();
   rc_inclCampRender();
   ['rc_agency'].forEach(id=>{
@@ -876,7 +893,7 @@ function rc_resetFilters(){
   if(stEl) stEl.value = '';
   rc_selectedStores = new Set();
   rc_storeUpdateLabel();
-  ['rc_brand','rc_promoter','rc_client'].forEach(id=>{
+  ['rc_brand','rc_promoter','rc_client','rc_sap'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value='';
     const inp = document.getElementById(id+'_input');
@@ -1053,13 +1070,8 @@ async function rc_load(){
     });
 
     rc_populateFilters();
-    rc_populateCampaigns();
     rc_render();
 
-    const total = rc_data.length;
-    const reported = rc_data.filter(r=>r.status==='complete').length;
-    document.getElementById('rc_subline_text').textContent =
-      `${total} promoters \u00b7 ${reported} reported \u00b7 ${from} \u2192 ${to}`;
     document.getElementById('rc_sync_badge').innerHTML =
       `<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;">\ud83d\udd04 Azure sync ${rc_timeAgo(lastSynced)}</span>`;
 
@@ -1077,113 +1089,362 @@ function rc_timeAgo(isoStr){
 }
 
 // ── Searchable dropdown helpers ──────────────────────────────────────────────
-const rc_ddData = { rc_brand_dd:[], rc_store_dd:[], rc_promoter_dd:[], rc_client_dd:[] };
+const rc_ddData = {
+  rc_brand_dd: [],
+  rc_promoter_dd: [],
+  rc_client_dd: [],
+  rc_sap_dd: []
+};
+
+function rc_escapeJsValue(value){
+  return String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r?\n/g, ' ');
+}
 
 function rc_ddBuild(ddId, items, placeholder){
   rc_ddData[ddId] = items;
-  const list = document.getElementById(ddId.replace('_dd','_list'));
-  const input = document.getElementById(ddId.replace('_dd','_input'));
+
+  const list   = document.getElementById(ddId.replace('_dd','_list'));
+  const input  = document.getElementById(ddId.replace('_dd','_input'));
   const hidden = document.getElementById(ddId.replace('_dd',''));
-  if(!list||!input||!hidden) return;
+
+  if(!list || !input || !hidden) return;
+
+  input.dataset.placeholder = placeholder;
   input.placeholder = placeholder;
+  input.value = hidden.value || '';
+
   rc_ddRenderList(ddId, '');
 }
 
 function rc_ddRenderList(ddId, query){
-  const list = document.getElementById(ddId.replace('_dd','_list'));
+  const list   = document.getElementById(ddId.replace('_dd','_list'));
   const hidden = document.getElementById(ddId.replace('_dd',''));
+  const input  = document.getElementById(ddId.replace('_dd','_input'));
+
+  if(!list || !hidden || !input) return;
+
   const curVal = hidden.value;
-  const q = query.toLowerCase();
+  const q = String(query || '').toLowerCase();
   const items = rc_ddData[ddId] || [];
-  const filtered = q ? items.filter(i=>i.toLowerCase().includes(q)) : items;
-  const placeholder = list.closest('.rc-dd').querySelector('input[type=text],input:not([type=hidden])').placeholder.replace(/^All /,'All ');
-  let html = `<div class="rc-dd-item placeholder" data-val="" onmousedown="rc_ddSelect('${ddId}','','${placeholder}')">All ${placeholder.replace('All ','')}</div>`;
-  if(!filtered.length) html += `<div class="rc-dd-none">No results</div>`;
-  else html += filtered.map(i=>`<div class="rc-dd-item${i===curVal?' active':''}" data-val="${i}" onmousedown="rc_ddSelect('${ddId}','${i.replace(/'/g,"\\'")}','${placeholder}')">${i}</div>`).join('');
-  list.innerHTML = html;
+  const filtered = q
+    ? items.filter(i => String(i).toLowerCase().includes(q))
+    : items;
+
+  const placeholder = input.dataset.placeholder || input.placeholder || 'All';
+
+  let content = `
+    <div class="rc-dd-item placeholder"
+      data-val=""
+      onmousedown="rc_ddSelect('${ddId}','')">
+      ${esc(placeholder)}
+    </div>`;
+
+  if(!filtered.length){
+    content += `<div class="rc-dd-none">No results</div>`;
+  }else{
+    content += filtered.map(item => {
+      const value = String(item);
+      return `
+        <div class="rc-dd-item${value===curVal?' active':''}"
+          data-val="${esc(value)}"
+          onmousedown="rc_ddSelect('${ddId}','${rc_escapeJsValue(value)}')">
+          ${esc(value)}
+        </div>`;
+    }).join('');
+  }
+
+  list.innerHTML = content;
 }
 
 function rc_ddFilter(ddId){
-  const input = document.getElementById(ddId.replace('_dd','_input'));
+  const input  = document.getElementById(ddId.replace('_dd','_input'));
   const hidden = document.getElementById(ddId.replace('_dd',''));
-  // If user clears input, reset value
-  if(!input.value) { hidden.value=''; rc_render(); }
+  const list   = document.getElementById(ddId.replace('_dd','_list'));
+
+  if(!input || !hidden || !list) return;
+
+  if(!input.value && hidden.value){
+    hidden.value = '';
+    rc_filtersChanged();
+  }
+
   rc_ddRenderList(ddId, input.value);
-  document.getElementById(ddId.replace('_dd','_list')).classList.add('open');
+  list.classList.add('open');
 }
 
 function rc_ddOpen(ddId){
-  rc_ddRenderList(ddId, document.getElementById(ddId.replace('_dd','_input')).value||'');
-  document.getElementById(ddId.replace('_dd','_list')).classList.add('open');
+  const input = document.getElementById(ddId.replace('_dd','_input'));
+  const list  = document.getElementById(ddId.replace('_dd','_list'));
+
+  if(!input || !list) return;
+
+  rc_ddRenderList(ddId, input.value || '');
+  list.classList.add('open');
 }
 
 function rc_ddBlur(ddId){
   setTimeout(()=>{
-    document.getElementById(ddId.replace('_dd','_list')).classList.remove('open');
-    // Restore display of current value
+    const list   = document.getElementById(ddId.replace('_dd','_list'));
     const hidden = document.getElementById(ddId.replace('_dd',''));
     const input  = document.getElementById(ddId.replace('_dd','_input'));
-    if(!hidden.value) input.value='';
+
+    if(list) list.classList.remove('open');
+    if(input && hidden) input.value = hidden.value || '';
   }, 150);
 }
 
-function rc_ddSelect(ddId, val, placeholder){
+function rc_ddSelect(ddId, val){
   const hidden = document.getElementById(ddId.replace('_dd',''));
   const input  = document.getElementById(ddId.replace('_dd','_input'));
   const list   = document.getElementById(ddId.replace('_dd','_list'));
+
+  if(!hidden || !input || !list) return;
+
   hidden.value = val;
-  input.value  = val || '';
-  input.placeholder = val ? '' : `All ${placeholder.replace('All ','')}`;
+  input.value  = val;
   list.classList.remove('open');
-  // Cascade: if company or brand/store changed, re-populate dependents
-  rc_cascadeFilters();
-  rc_render();
+
+  rc_filtersChanged();
 }
 
+// ── Centralized cross-filter engine ──────────────────────────────────────────
+function rc_getFilterState(){
+  return {
+    agency:   document.getElementById('rc_agency')?.value   || '',
+    client:   document.getElementById('rc_client')?.value   || '',
+    brand:    document.getElementById('rc_brand')?.value    || '',
+    promoter: document.getElementById('rc_promoter')?.value || '',
+    sap:      document.getElementById('rc_sap')?.value      || '',
+    status:   document.getElementById('rc_status')?.value   || '',
+    stores:        new Set(rc_selectedStores),
+    campaigns:     new Set(rc_selectedCampaigns),
+    campaignsNone: rc_noCampaignsSelected,
+  };
+}
 
+function rc_rowMatchesFilters(row, state, ignoredFacet=''){
+  if(ignoredFacet !== 'agency' &&
+     state.agency &&
+     row.agency !== state.agency) return false;
 
-function rc_cascadeFilters(){
-  const agencyVal = document.getElementById('rc_agency').value;
-  const clientVal = document.getElementById('rc_client')?.value || '';
-  const brandVal  = document.getElementById('rc_brand').value;
+  if(ignoredFacet !== 'stores' &&
+     state.stores.size &&
+     !state.stores.has(row.schedStoreCode)) return false;
 
-  let scoped = rc_data;
-  if(agencyVal) scoped = scoped.filter(r=>r.agency===agencyVal);
-  if(rc_selectedStores.size) scoped = scoped.filter(r=>rc_selectedStores.has(r.schedStoreCode));
-  if(clientVal) scoped = scoped.filter(r=>r.schedClient===clientVal);
+  if(ignoredFacet !== 'client' &&
+     state.client &&
+     row.schedClient !== state.client) return false;
 
-  const stores    = [...new Set(rc_data.filter(r=>!agencyVal||r.agency===agencyVal).map(r=>r.schedStoreCode).filter(Boolean))].sort();
-  const clients   = [...new Set(rc_data.filter(r=>(!agencyVal||r.agency===agencyVal)&&(!rc_selectedStores.size||rc_selectedStores.has(r.schedStoreCode))).map(r=>r.schedClient).filter(Boolean))].sort();
-  const campaigns = [...new Set(scoped.map(r=>r.campaignName).filter(Boolean))].sort();
-  const brands    = [...new Set(scoped.map(r=>r.schedBrand).filter(Boolean))].sort();
-  const promoters = [...new Set(scoped.map(r=>r.promoter).filter(Boolean))].sort();
+  if(ignoredFacet !== 'brand' &&
+     state.brand &&
+     row.schedBrand !== state.brand) return false;
 
-  rc_storeItems = stores; rc_storeRender();
-  rc_ddBuild('rc_client_dd',   clients,   'All clients');
-  rc_inclCampItems = campaigns; rc_inclCampRender(); rc_inclCampUpdateLabel();
-  rc_ddBuild('rc_brand_dd',    brands,    'All brands');
-  rc_ddBuild('rc_promoter_dd', promoters, 'All promoters');
+  if(ignoredFacet !== 'promoter' &&
+     state.promoter &&
+     row.promoter !== state.promoter) return false;
 
-  rc_selectedStores.forEach(s=>{ if(!stores.includes(s)) rc_selectedStores.delete(s); });
-  rc_storeUpdateLabel();
-  // Prune selected campaigns no longer in list
-  if(rc_selectedCampaigns.size){
-    rc_selectedCampaigns.forEach(c=>{ if(!campaigns.includes(c)) rc_selectedCampaigns.delete(c); });
-    if(rc_selectedCampaigns.size === campaigns.length) rc_selectedCampaigns.clear();
-    rc_inclCampUpdateLabel();
+  if(ignoredFacet !== 'sap' &&
+     state.sap &&
+     String(row.campaignSapCode ?? '') !== state.sap) return false;
+
+  if(ignoredFacet !== 'status' &&
+     state.status &&
+     row.status !== state.status) return false;
+
+  if(ignoredFacet !== 'campaigns'){
+    // "Unselect all" must return no table rows, while the available filter
+    // values remain visible so the user can select campaigns again.
+    if(state.campaignsNone && ignoredFacet === '') return false;
+
+    if(state.campaigns.size &&
+       !state.campaigns.has(row.campaignName)) return false;
   }
-  if(clientVal && !clients.includes(clientVal)){ document.getElementById('rc_client').value=''; document.getElementById('rc_client_input').value=''; }
-  if(brandVal  && !brands.includes(brandVal)){   document.getElementById('rc_brand').value='';  document.getElementById('rc_brand_input').value=''; }
+
+  return true;
 }
 
-function rc_populateCampaigns(){
-  rc_selectedCampaigns = new Set();
-  const campaigns = [...new Set(rc_data.map(r=>r.campaignName).filter(Boolean))].sort();
+function rc_getFilteredRows(){
+  const state = rc_getFilterState();
+  return rc_data.filter(row => rc_rowMatchesFilters(row, state));
+}
+
+function rc_uniqueFacetValues(rows, field){
+  return [...new Set(
+    rows
+      .map(row => String(row[field] ?? '').trim())
+      .filter(Boolean)
+  )].sort((a,b)=>a.localeCompare(b, undefined, {
+    numeric:true,
+    sensitivity:'base'
+  }));
+}
+
+function rc_clearSingleFilter(id){
+  const hidden = document.getElementById(id);
+  const input  = document.getElementById(id + '_input');
+
+  if(hidden) hidden.value = '';
+  if(input)  input.value = '';
+}
+
+function rc_agencyLabel(code){
+  const companyMap = {};
+
+  (allCo || []).forEach(company => {
+    const match = String(company.name || '')
+      .match(/(?:GLOBE TRAVEL RETAIL|GLOBE TR)\s+(\w+)/i);
+
+    if(match) companyMap[match[1].toUpperCase()] = company.name;
+  });
+
+  if(companyMap.IR && !companyMap.IE){
+    companyMap.IE = companyMap.IR.replace(/IR$/i,'IE');
+  }
+
+  return companyMap[String(code || '').toUpperCase()] || code;
+}
+
+function rc_refreshDynamicFilters(pass=0){
+  const state = rc_getFilterState();
+
+  const agencies = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'agency')),
+    'agency'
+  );
+
+  const stores = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'stores')),
+    'schedStoreCode'
+  );
+
+  const clients = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'client')),
+    'schedClient'
+  );
+
+  const brands = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'brand')),
+    'schedBrand'
+  );
+
+  const promoters = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'promoter')),
+    'promoter'
+  );
+
+  const sapCodes = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'sap')),
+    'campaignSapCode'
+  );
+
+  const campaigns = rc_uniqueFacetValues(
+    rc_data.filter(r=>rc_rowMatchesFilters(r,state,'campaigns')),
+    'campaignName'
+  );
+
+  let selectionChanged = false;
+
+  const agencyEl = document.getElementById('rc_agency');
+  if(state.agency && !agencies.includes(state.agency)){
+    if(agencyEl) agencyEl.value = '';
+    selectionChanged = true;
+  }
+
+  [...rc_selectedStores].forEach(store=>{
+    if(!stores.includes(store)){
+      rc_selectedStores.delete(store);
+      selectionChanged = true;
+    }
+  });
+
+  if(state.client && !clients.includes(state.client)){
+    rc_clearSingleFilter('rc_client');
+    selectionChanged = true;
+  }
+
+  if(state.brand && !brands.includes(state.brand)){
+    rc_clearSingleFilter('rc_brand');
+    selectionChanged = true;
+  }
+
+  if(state.promoter && !promoters.includes(state.promoter)){
+    rc_clearSingleFilter('rc_promoter');
+    selectionChanged = true;
+  }
+
+  if(state.sap && !sapCodes.includes(state.sap)){
+    rc_clearSingleFilter('rc_sap');
+    selectionChanged = true;
+  }
+
+  const hadExplicitCampaignSelection =
+    rc_selectedCampaigns.size > 0;
+
+  [...rc_selectedCampaigns].forEach(campaign=>{
+    if(!campaigns.includes(campaign)){
+      rc_selectedCampaigns.delete(campaign);
+      selectionChanged = true;
+    }
+  });
+
+  // If an explicit selection becomes invalid because another filter changed,
+  // return to the default "all available campaigns" state.
+  if(hadExplicitCampaignSelection &&
+     rc_selectedCampaigns.size === 0){
+    rc_noCampaignsSelected = false;
+  }
+
+  if(!rc_noCampaignsSelected &&
+     rc_selectedCampaigns.size &&
+     rc_selectedCampaigns.size === campaigns.length){
+    rc_selectedCampaigns.clear();
+    selectionChanged = true;
+  }
+
+  // Removing an invalid selection can expand the available values of
+  // another facet, so recalculate until the state is stable.
+  if(selectionChanged && pass < 6){
+    rc_refreshDynamicFilters(pass + 1);
+    return;
+  }
+
+  if(agencyEl){
+    const currentAgency = agencyEl.value;
+
+    agencyEl.innerHTML =
+      '<option value="">All companies</option>' +
+      agencies.map(code=>
+        `<option value="${esc(code)}">${esc(rc_agencyLabel(code))}</option>`
+      ).join('');
+
+    agencyEl.value = agencies.includes(currentAgency)
+      ? currentAgency
+      : '';
+
+    agencyEl.style.display = agencies.length ? '' : 'none';
+    agencyEl.onchange = rc_filtersChanged;
+  }
+
+  rc_storeItems = stores;
+  rc_storeRender();
+  rc_storeUpdateLabel();
+
   rc_inclCampItems = campaigns;
   rc_inclCampRender();
   rc_inclCampUpdateLabel();
-  const bar = document.getElementById('rc_campaign_bar');
-  if(bar) bar.style.display='none';
+
+  rc_ddBuild('rc_client_dd',   clients,   'All clients');
+  rc_ddBuild('rc_brand_dd',    brands,    'All brands');
+  rc_ddBuild('rc_promoter_dd', promoters, 'All promoters');
+  rc_ddBuild('rc_sap_dd',      sapCodes,  'All SAP codes');
+}
+
+function rc_filtersChanged(){
+  rc_refreshDynamicFilters();
+  rc_render();
 }
 
 document.addEventListener('click', e => {
@@ -1193,71 +1454,199 @@ document.addEventListener('click', e => {
 
 // ── Campaign INCLUSION multi-select ─────────────────────────────────────────
 let rc_inclCampItems = [];
-let rc_selectedCampaigns = new Set(); // empty = all included
+let rc_selectedCampaigns = new Set(); // empty + false below = all selected
+let rc_noCampaignsSelected = false;   // true = explicitly unselect all
 let rc_inclCampOpen = false;
 
 function rc_inclCampToggleOpen(){
   rc_inclCampOpen = !rc_inclCampOpen;
   const list = document.getElementById('rc_incl_camp_list');
+
+  if(!list) return;
+
   if(rc_inclCampOpen){
     list.classList.add('open');
     rc_inclCampRender();
-    setTimeout(()=>{ const s=document.getElementById('rc_incl_camp_search'); if(s) s.focus(); },50);
-  } else list.classList.remove('open');
+    setTimeout(()=>{
+      const search = document.getElementById('rc_incl_camp_search');
+      if(search) search.focus();
+    },50);
+  }else{
+    list.classList.remove('open');
+  }
 }
 
 function rc_inclCampClose(){
   rc_inclCampOpen = false;
+
   const list = document.getElementById('rc_incl_camp_list');
+  const search = document.getElementById('rc_incl_camp_search');
+
   if(list) list.classList.remove('open');
-  const s = document.getElementById('rc_incl_camp_search');
-  if(s) s.value='';
+  if(search) search.value = '';
 }
 
 function rc_inclCampRender(){
   const items = document.getElementById('rc_incl_camp_items');
   if(!items) return;
-  const q = (document.getElementById('rc_incl_camp_search')?.value||'').toLowerCase();
-  const filtered = q ? rc_inclCampItems.filter(c=>c.toLowerCase().includes(q)) : rc_inclCampItems;
-  if(!filtered.length){ items.innerHTML='<div class="rc-dd-none">No campaigns</div>'; return; }
-  items.innerHTML = filtered.map(c => {
-    const selected = rc_selectedCampaigns.size===0 || rc_selectedCampaigns.has(c);
-    return `<div class="rc-dd-item" style="${selected?'background:#eff6ff;color:var(--blue);font-weight:500;':''}" onmousedown="rc_inclCampToggle('${c.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
-      <span style="display:inline-flex;align-items:center;gap:6px;">
-        <span style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${selected?'var(--blue)':'var(--g300)'};background:${selected?'var(--blue)':'#fff'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;">
-          ${selected?'<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>':''}
+
+  const query = (
+    document.getElementById('rc_incl_camp_search')?.value || ''
+  ).toLowerCase();
+
+  const filtered = query
+    ? rc_inclCampItems.filter(c=>c.toLowerCase().includes(query))
+    : rc_inclCampItems;
+
+  const allSelected =
+    !rc_noCampaignsSelected &&
+    rc_selectedCampaigns.size === 0;
+
+  const toggleAllLabel = allSelected
+    ? 'Unselect all'
+    : 'Select all';
+
+  const toggleAllRow = `
+    <div class="rc-dd-item"
+      onmousedown="rc_inclCampToggleAll()"
+      style="
+        position:sticky;
+        top:39px;
+        z-index:1;
+        border-bottom:1px solid var(--g200);
+        background:${allSelected?'var(--blue-light)':'#fff'};
+        color:${allSelected?'var(--blue)':'var(--g900)'};
+        font-weight:700;">
+      <span style="display:inline-flex;align-items:center;gap:7px;">
+        <span style="
+          width:15px;
+          height:15px;
+          border-radius:3px;
+          border:1.5px solid ${allSelected?'var(--blue)':'var(--g300)'};
+          background:${allSelected?'var(--blue)':'#fff'};
+          flex-shrink:0;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;">
+          ${allSelected
+            ? '<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>'
+            : ''}
         </span>
-        ${c}
+        ${toggleAllLabel}
       </span>
     </div>`;
+
+  if(!filtered.length){
+    items.innerHTML =
+      toggleAllRow +
+      '<div class="rc-dd-none">No campaigns</div>';
+    return;
+  }
+
+  const campaignRows = filtered.map(campaign=>{
+    const selected =
+      !rc_noCampaignsSelected &&
+      (
+        rc_selectedCampaigns.size === 0 ||
+        rc_selectedCampaigns.has(campaign)
+      );
+
+    return `
+      <div class="rc-dd-item"
+        style="${selected?'background:#eff6ff;color:var(--blue);font-weight:500;':''}"
+        onmousedown="rc_inclCampToggle('${rc_escapeJsValue(campaign)}')">
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <span style="
+            width:14px;
+            height:14px;
+            border-radius:3px;
+            border:1.5px solid ${selected?'var(--blue)':'var(--g300)'};
+            background:${selected?'var(--blue)':'#fff'};
+            flex-shrink:0;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;">
+            ${selected
+              ? '<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>'
+              : ''}
+          </span>
+          ${esc(campaign)}
+        </span>
+      </div>`;
   }).join('');
+
+  items.innerHTML = toggleAllRow + campaignRows;
+}
+
+function rc_inclCampToggleAll(){
+  const allSelected =
+    !rc_noCampaignsSelected &&
+    rc_selectedCampaigns.size === 0;
+
+  rc_selectedCampaigns.clear();
+
+  if(allSelected){
+    // Explicitly show no campaigns.
+    rc_noCampaignsSelected = true;
+  }else{
+    // Empty Set + false means all available campaigns are selected.
+    rc_noCampaignsSelected = false;
+  }
+
+  rc_filtersChanged();
 }
 
 function rc_inclCampToggle(name){
-  // First click initializes selection to all, then toggles
-  if(rc_selectedCampaigns.size===0){
-    rc_inclCampItems.forEach(c=>rc_selectedCampaigns.add(c));
+  if(rc_noCampaignsSelected){
+    // Start a new explicit selection from an empty state.
+    rc_noCampaignsSelected = false;
+    rc_selectedCampaigns.clear();
+    rc_selectedCampaigns.add(name);
+  }else if(rc_selectedCampaigns.size === 0){
+    // All are selected by default. Materialize the available list,
+    // then remove the clicked campaign.
+    rc_inclCampItems.forEach(c=>
+      rc_selectedCampaigns.add(c)
+    );
+    rc_selectedCampaigns.delete(name);
+  }else if(rc_selectedCampaigns.has(name)){
+    rc_selectedCampaigns.delete(name);
+  }else{
+    rc_selectedCampaigns.add(name);
   }
-  if(rc_selectedCampaigns.has(name)) rc_selectedCampaigns.delete(name);
-  else rc_selectedCampaigns.add(name);
-  // If all selected, reset to empty (= all)
-  if(rc_selectedCampaigns.size === rc_inclCampItems.length) rc_selectedCampaigns.clear();
-  rc_inclCampRender();
-  rc_inclCampUpdateLabel();
-  rc_render();
+
+  if(rc_selectedCampaigns.size === 0){
+    // The final explicitly selected campaign was removed.
+    rc_noCampaignsSelected = true;
+  }else if(
+    rc_selectedCampaigns.size === rc_inclCampItems.length
+  ){
+    // Normalize a full explicit selection back to the default state.
+    rc_selectedCampaigns.clear();
+    rc_noCampaignsSelected = false;
+  }
+
+  rc_filtersChanged();
 }
 
 function rc_inclCampUpdateLabel(){
   const label = document.getElementById('rc_incl_camp_label');
   const trigger = document.getElementById('rc_incl_camp_trigger');
-  if(!label||!trigger) return;
-  const n = rc_selectedCampaigns.size;
-  if(!n){
+
+  if(!label || !trigger) return;
+
+  const count = rc_selectedCampaigns.size;
+
+  if(rc_noCampaignsSelected){
+    label.textContent = 'No campaigns';
+    trigger.style.borderColor = 'var(--red)';
+    trigger.style.color = 'var(--red)';
+  }else if(!count){
     label.textContent = 'All campaigns';
     trigger.style.borderColor = 'var(--g300)';
     trigger.style.color = 'var(--g600)';
-  } else {
-    label.textContent = `${n} campaign${n>1?'s':''}`;
+  }else{
+    label.textContent = `${count} campaign${count>1?'s':''}`;
     trigger.style.borderColor = 'var(--blue)';
     trigger.style.color = 'var(--blue)';
   }
@@ -1271,110 +1660,115 @@ let rc_storeOpen = false;
 function rc_storeToggleOpen(){
   rc_storeOpen = !rc_storeOpen;
   const list = document.getElementById('rc_store_list');
+
+  if(!list) return;
+
   if(rc_storeOpen){
     list.classList.add('open');
     rc_storeRender();
-    setTimeout(()=>{ const s=document.getElementById('rc_store_search'); if(s) s.focus(); },50);
-  } else {
+    setTimeout(()=>{
+      const search = document.getElementById('rc_store_search');
+      if(search) search.focus();
+    },50);
+  }else{
     list.classList.remove('open');
   }
 }
 
 function rc_storeClose(){
   rc_storeOpen = false;
-  document.getElementById('rc_store_list').classList.remove('open');
-  const s = document.getElementById('rc_store_search');
-  if(s) s.value='';
+
+  const list = document.getElementById('rc_store_list');
+  const search = document.getElementById('rc_store_search');
+
+  if(list) list.classList.remove('open');
+  if(search) search.value = '';
 }
 
 function rc_storeRender(){
   const items = document.getElementById('rc_store_items');
   if(!items) return;
-  const q = (document.getElementById('rc_store_search')?.value||'').toLowerCase();
-  const filtered = q ? rc_storeItems.filter(s=>s.toLowerCase().includes(q)) : rc_storeItems;
-  if(!filtered.length){ items.innerHTML='<div class="rc-dd-none">No results</div>'; return; }
-  items.innerHTML = filtered.map(s => {
-    const selected = rc_selectedStores.has(s);
-    const label = s.toUpperCase();
-    return `<div class="rc-dd-item" style="${selected?'background:#eff6ff;color:var(--blue);font-weight:600;':''}" onmousedown="rc_storeToggle('${s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
-      <span style="display:inline-flex;align-items:center;gap:6px;">
-        <span style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${selected?'var(--blue)':'var(--g300)'};background:${selected?'var(--blue)':'#fff'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-          ${selected?'<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>':''}
+
+  const query = (
+    document.getElementById('rc_store_search')?.value || ''
+  ).toLowerCase();
+
+  const filtered = query
+    ? rc_storeItems.filter(store=>store.toLowerCase().includes(query))
+    : rc_storeItems;
+
+  if(!filtered.length){
+    items.innerHTML = '<div class="rc-dd-none">No results</div>';
+    return;
+  }
+
+  items.innerHTML = filtered.map(store=>{
+    const selected = rc_selectedStores.has(store);
+
+    return `
+      <div class="rc-dd-item"
+        style="${selected?'background:#eff6ff;color:var(--blue);font-weight:600;':''}"
+        onmousedown="rc_storeToggle('${rc_escapeJsValue(store)}')">
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <span style="
+            width:14px;
+            height:14px;
+            border-radius:3px;
+            border:1.5px solid ${selected?'var(--blue)':'var(--g300)'};
+            background:${selected?'var(--blue)':'#fff'};
+            flex-shrink:0;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;">
+            ${selected
+              ? '<svg width="9" height="9" viewBox="0 0 10 10" fill="#fff"><path d="M1.5 5l2.5 2.5 5-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>'
+              : ''}
+          </span>
+          ${esc(store.toUpperCase())}
         </span>
-        ${label}
-      </span>
-    </div>`;
+      </div>`;
   }).join('');
 }
 
 function rc_storeToggle(name){
-  if(rc_selectedStores.has(name)) rc_selectedStores.delete(name);
-  else rc_selectedStores.add(name);
-  rc_storeRender();
-  rc_storeUpdateLabel();
-  rc_cascadeFilters();
-  rc_render();
+  if(rc_selectedStores.has(name)){
+    rc_selectedStores.delete(name);
+  }else{
+    rc_selectedStores.add(name);
+  }
+
+  rc_filtersChanged();
 }
 
 function rc_storeUpdateLabel(){
   const label = document.getElementById('rc_store_label');
   const trigger = document.getElementById('rc_store_trigger');
-  if(!label||!trigger) return;
-  const n = rc_selectedStores.size;
-  if(!n){
+
+  if(!label || !trigger) return;
+
+  const count = rc_selectedStores.size;
+
+  if(!count){
     label.textContent = 'All stores';
     trigger.style.borderColor = 'var(--g300)';
     trigger.style.color = 'var(--g600)';
-  } else if(n === 1){
+  }else if(count === 1){
     label.textContent = [...rc_selectedStores][0].toUpperCase();
     trigger.style.borderColor = 'var(--blue)';
     trigger.style.color = 'var(--blue)';
-  } else {
-    label.textContent = `${n} stores`;
+  }else{
+    label.textContent = `${count} stores`;
     trigger.style.borderColor = 'var(--blue)';
     trigger.style.color = 'var(--blue)';
   }
 }
 
 function rc_populateFilters(){
-  const agencies = [...new Set(rc_data.map(r=>r.agency).filter(Boolean))].sort();
-
-  const ag = document.getElementById('rc_agency');
-  if(ag){
-    const cur = ag.value;
-    const codeToName = {};
-    (allCo||[]).forEach(c=>{
-      const m = c.name.match(/(?:GLOBE TRAVEL RETAIL|GLOBE TR)\s+(\w+)/i);
-      if(m) codeToName[m[1].toUpperCase()] = c.name;
-    });
-    if(codeToName['IR'] && !codeToName['IE']) codeToName['IE'] = codeToName['IR'].replace(/IR$/i,'IE');
-    ag.innerHTML = '<option value="">All companies</option>' +
-      agencies.map(a=>`<option value="${a}"${a===cur?' selected':''}>${codeToName[a.toUpperCase()]||a}</option>`).join('');
-    ag.style.display = agencies.length ? '' : 'none';
-    ag.onchange = ()=>{ rc_cascadeFilters(); rc_render(); };
-  }
-
-  // Build cascaded dropdowns
-  rc_cascadeFilters();
+  rc_refreshDynamicFilters();
 }
 
 function rc_render(){
-  const filterAgency   = document.getElementById('rc_agency')?.value    || '';
-  const filterClient   = document.getElementById('rc_client')?.value    || '';
-  const filterBrand    = document.getElementById('rc_brand')?.value     || '';
-  const filterPromoter = document.getElementById('rc_promoter')?.value  || '';
-  const filterStatus   = document.getElementById('rc_status')?.value    || '';
-
-  let rows = rc_data.filter(r => {
-    if(filterAgency   && r.agency         !== filterAgency)   return false;
-    if(rc_selectedStores.size && !rc_selectedStores.has(r.schedStoreCode)) return false;
-    if(filterClient   && r.schedClient    !== filterClient)   return false;
-    if(filterBrand    && r.schedBrand     !== filterBrand)    return false;
-    if(filterPromoter && r.promoter       !== filterPromoter) return false;
-    if(filterStatus   && r.status         !== filterStatus)   return false;
-    if(rc_selectedCampaigns.size && !rc_selectedCampaigns.has(r.campaignName)) return false;
-    return true;
-  });
+  let rows = rc_getFilteredRows();
 
   rows.sort((a,b) => {
     if(a.day !== b.day) return b.day.localeCompare(a.day);
@@ -1391,6 +1785,15 @@ function rc_render(){
   const pct           = (total-absent-absentBackup-pending) ? Math.round(complete/(total-absent-absentBackup-pending)*100) : 0;
   const totalPieces   = rows.reduce((n,r)=>n+(r.pieces||0),0);
   const totalTurnover = rows.reduce((n,r)=>n+(r.turnover||0),0);
+
+  const from = document.getElementById('rc_from')?.value || '';
+  const to   = document.getElementById('rc_to')?.value   || '';
+  const subline = document.getElementById('rc_subline_text');
+
+  if(subline){
+    subline.textContent =
+      `${total} displayed · ${complete} reported · ${from} → ${to}`;
+  }
 
   const curStatus = document.getElementById('rc_status')?.value || '';
   document.getElementById('rc_kpis').innerHTML = [
