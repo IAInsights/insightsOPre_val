@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Insights Check — Under Review</title>
+<title>Reporting Compliance &amp; Validation Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -49,10 +49,14 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .stat-item{display:flex;align-items:center;gap:5px;color:var(--g600);}
 .stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .stat-num{font-weight:700;color:var(--g900);}
+.main-filter-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);padding:9px 20px;flex-shrink:0;}
+.main-filter-title{font-size:12px;font-weight:700;color:var(--g600);margin-right:2px;}
+.main-filter-reset{height:30px;padding:0 12px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;color:var(--g600);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;}
+.main-filter-reset:hover{border-color:var(--blue);color:var(--blue);}
 
 .body{flex:1;overflow-y:auto;padding:10px 20px;display:flex;flex-direction:column;gap:8px;}
 
-/* ── 4-column card ── */
+/* ── Report cards ── */
 .rv-card{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden;flex-shrink:0;}
 .rv-card.pending{border-left:4px solid var(--amber);}
 .rv-card.validated{border-left:4px solid var(--green);}
@@ -80,7 +84,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .notes-ta:focus{border-color:var(--blue);}
 
 /* Col 3 – validate */
-.rv-col-validate{flex:0 0 220px;min-width:0;padding:10px 12px;border-right:1px solid var(--g100);display:flex;flex-direction:column;gap:6px;align-items:flex-start;overflow:hidden;}
+.rv-col-validate{flex:0 0 255px;min-width:0;padding:10px 12px;border-right:1px solid var(--g100);display:flex;flex-direction:column;gap:6px;align-items:flex-start;overflow:hidden;}
 .rv-status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:20px;}
 .rv-status.pending{background:var(--amber-light);color:var(--amber);}
 .rv-status.validated{background:var(--green-light);color:var(--green);}
@@ -92,6 +96,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .btn-validate svg{width:13px;height:13px;fill:currentColor;}
 .btn-unvalidate{padding:5px 10px;background:var(--g100);color:var(--g600);border:none;border-radius:var(--r);font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer;width:100%;text-align:center;}
 .btn-unvalidate:hover{background:var(--g200);}
+.btn-unvalidate:disabled{cursor:not-allowed;color:var(--g400);background:var(--g100);opacity:.75;}
+.btn-unvalidate:disabled:hover{background:var(--g100);}
 .ops-sel{height:32px;padding:0 6px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;color:var(--g900);background:#fff;cursor:pointer;width:100%;max-width:175px;outline:none;transition:border-color .15s;}
 .ops-sel:focus{border-color:var(--blue);}
 .btn-add-ops{padding:4px 9px;border:1.5px solid var(--blue);border-radius:var(--r);background:var(--blue-light);color:var(--blue);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
@@ -105,6 +111,32 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 
 /* Col 4 – right note */
 .rv-col-right{flex:0 0 160px;min-width:0;padding:10px 12px;display:flex;flex-direction:column;gap:5px;}
+
+/* Validated and sent page */
+.rv-validated-grid{display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(280px,1.7fr) minmax(240px,1.3fr) minmax(190px,1fr);align-items:stretch;}
+.rv-v-section{min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:7px;}
+.rv-v-section+.rv-v-section{border-left:1px solid var(--g100);}
+.rv-v-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g400);margin-bottom:2px;}
+.rv-v-client{background:var(--blue-light);}
+.rv-v-client-name{font-size:13px;font-weight:700;color:var(--blue-dark);}
+.rv-v-contact-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:5px;}
+.rv-v-contact{font-size:12px;color:var(--g600);overflow-wrap:anywhere;}
+.rv-v-contact strong{color:var(--g900);}
+.rv-v-empty{font-size:11.5px;color:var(--g500);font-style:italic;}
+.rv-v-timeline{display:flex;flex-direction:column;gap:9px;}
+.rv-v-step{display:grid;grid-template-columns:8px minmax(0,1fr);column-gap:7px;align-items:start;}
+.rv-v-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);margin-top:4px;}
+.rv-v-step.sent .rv-v-dot{background:var(--green);}
+.rv-v-step-label{font-size:11px;color:var(--g600);}
+.rv-v-step-date{font-size:11.5px;font-weight:700;color:var(--g900);margin-top:2px;}
+.rv-validator-prominent{display:flex;align-items:center;gap:6px;margin-top:4px;padding-top:9px;border-top:1px solid var(--g100);font-size:13px;font-weight:700;color:var(--green);}
+.rv-validator-prominent svg{width:15px;height:15px;fill:var(--green);flex-shrink:0;}
+.rv-v-powerbi{justify-content:center;}
+.rv-v-powerbi .pbi-report-name{font-size:12px;font-weight:700;color:var(--g900);margin-bottom:2px;}
+.rv-v-powerbi .pbi-link{justify-content:center;width:100%;}
+.rv-v-sent,.rv-v-ready{padding:8px 9px;border-radius:7px;font-size:11px;font-weight:700;line-height:1.35;text-align:center;margin-top:3px;}
+.rv-v-sent{background:var(--green-light);color:var(--green);}
+.rv-v-ready{background:var(--blue-light);color:var(--blue);}
 
 /* ── Empty ── */
 .empty{padding:60px 24px;text-align:center;color:var(--g500);}
@@ -136,6 +168,28 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .toast.error{background:var(--red);}
 
 /* Searchable dropdowns for Reporting Check */
+.rc-filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.rc-ms{position:relative;flex-shrink:0;}
+.rc-ms-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;color:var(--g600);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;max-width:170px;}
+.rc-ms-btn:hover{border-color:var(--blue);color:var(--blue);}
+.rc-ms-btn.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue);}
+.rc-ms-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rc-ms-btn svg{width:8px;height:5px;fill:currentColor;flex-shrink:0;}
+.rc-ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;width:250px;background:#fff;border:1.5px solid var(--g200);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.16);z-index:10000;overflow:hidden;}
+.rc-ms-search{width:100%;padding:7px 10px;border:0;border-bottom:1px solid var(--g200);background:var(--g50);font-family:inherit;font-size:12px;outline:none;}
+.rc-ms-actions{display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--g100);font-size:11px;}
+.rc-ms-actions button{border:0;background:none;color:var(--blue);font:inherit;font-weight:600;cursor:pointer;padding:0;}
+.rc-ms-list{max-height:230px;overflow-y:auto;padding:4px 0;}
+.rc-ms-opt{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:12px;color:var(--g900);cursor:pointer;}
+.rc-ms-opt:hover{background:var(--blue-light);}
+.rc-ms-opt input{accent-color:var(--blue);width:14px;height:14px;flex-shrink:0;}
+.rc-ms-opt .count{margin-left:auto;color:var(--g400);font-family:monospace;font-size:10.5px;}
+.rc-kpi{border:1px solid var(--g200);border-radius:8px;padding:8px 16px;display:flex;flex-direction:column;gap:1px;min-width:95px;box-shadow:0 1px 3px rgba(0,0,0,.05);font-family:inherit;text-align:left;cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s;}
+.rc-kpi:hover{transform:translateY(-1px);border-color:var(--kpi-color);box-shadow:0 3px 8px rgba(0,0,0,.10);}
+.rc-kpi.active{border-color:var(--kpi-color);box-shadow:0 0 0 2px color-mix(in srgb,var(--kpi-color) 22%,transparent);}
+.rc-kpi:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.rc-kpi-static{cursor:default;transition:none;}
+.rc-kpi-static:hover{transform:none;border-color:var(--g200);box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .rc-dd{position:relative;display:inline-flex;align-items:center;}
 .rc-dd-input{height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right 8px center;min-width:120px;cursor:pointer;}
 .rc-dd-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.15);}
@@ -151,11 +205,77 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .rc-camp-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
 .rc-camp-btn.excluded{background:var(--g100);border-color:var(--g200);color:var(--g400);text-decoration:line-through;}
 
+/* ── Home dashboard ── */
+.home-page{display:flex;flex:1;min-height:0;overflow-y:auto;padding:10px 16px 14px;flex-direction:column;gap:9px;}
+.home-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--g200);border-radius:8px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.home-top h2{font-size:15px;margin-right:auto;}
+.home-date-label{font-size:12px;font-weight:600;color:var(--g600);}
+.home-date{height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;}
+.home-date:focus{border-color:var(--blue);}
+.home-status{font-size:11px;color:var(--g500);min-width:90px;text-align:right;}
+.home-kpis{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px;}
+.home-kpi{background:#fff;border:1px solid var(--g200);border-radius:8px;padding:9px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.home-kpi-value{font-family:monospace;font-size:20px;font-weight:800;line-height:1.05;}
+.home-kpi-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:2px;}
+.home-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;}
+.home-panel{background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden;min-width:0;}
+.home-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--g100);}
+.home-panel-head h3{font-size:13px;}
+.home-panel-head span{font-size:11px;color:var(--g500);}
+.home-compliance-list{max-height:180px;overflow-y:auto;}
+.home-compliance-row{display:grid;grid-template-columns:minmax(90px,1fr) 110px 48px;gap:9px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--g100);font-size:12px;}
+.home-compliance-row:last-child{border-bottom:0;}
+.home-compliance-name{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.home-bar{height:7px;border-radius:10px;background:var(--g100);overflow:hidden;}
+.home-bar span{display:block;height:100%;border-radius:10px;}
+.home-compliance-pct{font-family:monospace;font-weight:800;text-align:right;}
+.home-bottom{display:block;}
+.home-pending-list{display:flex;flex-direction:column;max-height:230px;overflow-y:auto;}
+.home-pending-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 12px;border-bottom:1px solid var(--g200);border-left:3px solid transparent;align-items:center;background:#fff;transition:background .15s,border-color .15s;}
+.home-pending-row:hover{background:var(--g50);border-left-color:var(--blue);}
+.home-pending-row:last-child{border-bottom:0;}
+.home-pending-title{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-pending-meta{font-size:10.5px;color:var(--g500);margin-top:3px;}
+.home-pending-meta b{font-weight:700;color:var(--g600);}
+.home-pending-meta .sep{color:var(--g300);padding:0 3px;}
+.home-pending-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.home-sector-badge,.home-brand-badge{display:inline-flex;align-items:center;border-radius:20px;padding:3px 8px;font-size:11px;line-height:1.2;}
+.home-sector-badge{border:1px solid #b8d0ff;background:var(--blue-light);color:var(--blue);font-weight:800;}
+.home-brand-badge{border:1px solid var(--g200);background:var(--g100);color:var(--g700);font-weight:700;}
+.home-pending-date{font-size:10.5px;color:var(--amber);font-weight:600;white-space:nowrap;}
+.home-pending-tools{display:flex;align-items:center;gap:8px;}
+.home-pending-count{font-family:monospace;font-size:11px;font-weight:800;color:var(--blue);background:var(--blue-light);padding:4px 8px;border-radius:20px;}
+.sent-date-callout{margin-top:8px;padding:7px 9px;border-radius:7px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:600;line-height:1.35;text-align:center;}
+.home-quick-panel{border-color:#b8d0ff;box-shadow:0 2px 8px rgba(16,96,232,.10);}
+.home-quick-panel .home-panel-head{background:var(--blue-light);border-bottom-color:#c9dafb;}
+.home-links{display:grid;grid-template-columns:1fr;gap:8px;padding:9px;}
+.home-link-card{position:relative;min-height:62px;border:2px solid var(--g200);border-radius:8px;padding:11px 42px 11px 12px;text-align:left;font-family:inherit;cursor:pointer;transition:box-shadow .15s,transform .15s;}
+.home-link-card::after{content:'→';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;}
+.home-link-card:hover{box-shadow:0 4px 12px rgba(16,96,232,.18);transform:translateY(-1px);}
+.home-link-card strong{display:block;font-size:13px;margin-bottom:3px;}
+.home-link-card span{font-size:11px;line-height:1.35;}
+.home-link-card.quick-pending{background:#fff7ed;border-color:#f59e0b;}
+.home-link-card.quick-pending strong{color:#9a3412;}
+.home-link-card.quick-pending span{color:#9a5b32;}
+.home-link-card.quick-pending::after{background:#f59e0b;color:#fff;}
+.home-link-card.quick-reporting{background:var(--blue);border-color:var(--blue);}
+.home-link-card.quick-reporting strong,.home-link-card.quick-reporting span{color:#fff;}
+.home-link-card.quick-reporting span{opacity:.85;}
+.home-link-card.quick-reporting::after{background:#fff;color:var(--blue);}
+.home-links{grid-template-columns:repeat(2,minmax(0,1fr));}
+button.home-compliance-row{width:100%;border:0;background:#fff;text-align:left;font-family:inherit;cursor:pointer;}
+button.home-compliance-row:hover{background:var(--blue-light);}
+button.home-compliance-row.active{background:var(--blue-light);box-shadow:inset 3px 0 0 var(--blue);}
+button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-offset:-2px;}
+.pbi-action-row{display:flex;align-items:flex-start;gap:5px;flex-direction:column;}
+.pbi-report-name{font-size:11.5px;font-weight:700;color:var(--g600);overflow-wrap:anywhere;}
+
 /* ── Responsive ── */
 @media (max-width: 1024px){
   .rv-col-left{flex:0 0 200px;}
-  .rv-col-validate{flex:0 0 190px;}
+  .rv-col-validate{flex:0 0 220px;}
   .rv-col-right{flex:0 0 130px;}
+  .rv-validated-grid{grid-template-columns:minmax(190px,1fr) minmax(240px,1.4fr) minmax(220px,1.15fr) minmax(170px,.9fr);}
 }
 
 @media (max-width: 860px){
@@ -165,6 +285,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
   .header-right{order:1;margin-left:0;flex:1 1 100%;justify-content:flex-end;}
 
   .stats-bar{flex-wrap:wrap;gap:10px;margin:8px 10px 0;padding:8px 12px;}
+  .main-filter-toolbar{padding:8px 10px;}
   .body{padding:8px 10px;}
 
   .rv-top{flex-direction:column;}
@@ -174,6 +295,9 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
   .rv-col-right{border-bottom:none;}
   .rv-col-validate{align-items:stretch;}
   .ops-sel,.btn-validate,.btn-unvalidate{max-width:none;}
+  .rv-validated-grid{grid-template-columns:1fr 1fr;}
+  .rv-v-section+.rv-v-section{border-left:0;border-top:1px solid var(--g100);}
+  .rv-v-client{border-top:0!important;}
 
   /* Reporting Check filter bar */
   #rc-page > div:first-child{padding:10px 12px;}
@@ -183,6 +307,10 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 
   /* Reporting Check table → horizontal scroll */
   #rc_area table{min-width:900px;}
+  .home-page{padding:10px;}
+  .home-kpis{grid-template-columns:repeat(2,minmax(120px,1fr));}
+  .home-grid,.home-bottom{grid-template-columns:1fr;}
+  .home-links{grid-template-columns:1fr;}
 }
 
 @media (max-width: 480px){
@@ -194,24 +322,25 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 
   .rv-col-left,.rv-col-center,.rv-col-validate,.rv-col-right{padding:8px 10px;}
   .rv-brand-store{font-size:12px;}
+  .rv-validated-grid{grid-template-columns:1fr;}
+  .rv-v-section{padding:10px;}
 
   .modal{padding:16px;width:100%;}
   .mgrid{grid-template-columns:1fr;}
+  .home-kpis{grid-template-columns:1fr 1fr;}
+  .home-compliance-row{grid-template-columns:minmax(80px,1fr) 80px 42px;padding:9px 10px;}
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Insights Check — Under Review</h1>
-  <button class="tab-btn active" id="hdr-tab-pending" onclick="setView('pending')">Pending validation</button>
-  <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Review Validated</button>
-  <button class="tab-btn"        id="hdr-tab-sent"    onclick="setView('sent')">Reports Sent (Active)</button>
+  <h1>Reporting Compliance &amp; Validation Hub</h1>
+  <button class="tab-btn active" id="hdr-tab-home" onclick="setView('home')">Home</button>
   <button class="tab-btn"        id="hdr-tab-rc"      onclick="setView('rc')">Reporting Check</button>
+  <button class="tab-btn"        id="hdr-tab-pending" onclick="setView('pending')">Reports Validation</button>
+  <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
-    <select class="company-filter" id="co-filter" onchange="applyFilter()">
-      <option value="">All companies</option>
-    </select>
     <button class="btn-refresh" onclick="loadData()">
       <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
       <span>Refresh</span>
@@ -220,8 +349,48 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 </div>
 
 <div class="page">
-  <div id="stats-bar" class="stats-bar"></div>
-  <div class="body" id="body">
+  <div id="home-page" class="home-page">
+    <div class="home-top">
+      <h2>Reporting overview</h2>
+      <span class="home-date-label">From</span>
+      <input type="date" id="home_from" class="home-date" onchange="home_dateChanged()">
+      <span class="home-date-label">To</span>
+      <input type="date" id="home_to" class="home-date" onchange="home_dateChanged()">
+      <span id="home_status" class="home-status">Loading compliance…</span>
+    </div>
+    <div id="home_kpis" class="home-kpis"></div>
+    <section class="home-panel home-quick-panel">
+      <div class="home-panel-head"><h3>Open a workspace</h3><span>Quick access</span></div>
+      <div class="home-links">
+        <button type="button" class="home-link-card quick-pending" onclick="setView('pending')"><strong>Reports Validation</strong><span>Review reports waiting for approval.</span></button>
+        <button type="button" class="home-link-card quick-reporting" onclick="setView('rc')"><strong>Reporting Check</strong><span>Open compliance and detailed status.</span></button>
+      </div>
+    </section>
+    <div class="home-grid">
+      <section class="home-panel">
+        <div class="home-panel-head"><h3>Compliance by Agency</h3><span>Select an agency</span></div>
+        <div id="home_country" class="home-compliance-list"></div>
+      </section>
+      <section class="home-panel">
+        <div class="home-panel-head"><h3>Compliance by sector</h3><span id="home_sector_context">All agencies</span></div>
+        <div id="home_sector" class="home-compliance-list"></div>
+      </section>
+    </div>
+    <div class="home-bottom">
+      <section class="home-panel">
+        <div class="home-panel-head"><h3>Reports to validate</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 total</span><button type="button" class="main-filter-reset" onclick="setView('pending')">Open page</button></div></div>
+        <div id="home_pending" class="home-pending-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="main-filter-toolbar" class="main-filter-toolbar" style="display:none;">
+    <span class="main-filter-title">Filters</span>
+    <div id="main_filter_bar" class="rc-filter-bar"></div>
+    <button type="button" class="main-filter-reset" onclick="main_resetFilters()">Reset</button>
+  </div>
+  <div id="stats-bar" class="stats-bar" style="display:none;"></div>
+  <div class="body" id="body" style="display:none;">
     <div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Loading…</div>
   </div>
 
@@ -233,64 +402,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
       <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">To</span>
       <input type="date" id="rc_to" onchange="rc_dateChanged()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
 
-      <select id="rc_agency" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;background:#fff;appearance:none;min-width:90px;">
-        <option value="">All companies</option>
-      </select>
-
-      <!-- Campaign inclusion multi-select -->
-      <div class="rc-dd" id="rc_incl_camp_dd" style="position:relative;">
-        <div id="rc_incl_camp_trigger" onclick="rc_inclCampToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:160px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
-          <span id="rc_incl_camp_label">All campaigns</span>
-        </div>
-        <div class="rc-dd-list" id="rc_incl_camp_list" style="min-width:280px;padding-top:0;">
-          <div style="padding:6px 8px;border-bottom:1px solid var(--g100);position:sticky;top:0;background:#fff;z-index:2;">
-            <input id="rc_incl_camp_search" type="text" placeholder="Search campaigns…" oninput="rc_inclCampRender()" onmousedown="event.stopPropagation()" style="width:100%;height:26px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:11px;outline:none;box-sizing:border-box;">
-          </div>
-          <div id="rc_incl_camp_items"></div>
-        </div>
-      </div>
-
-      <div class="rc-dd" id="rc_sap_dd">
-        <input class="rc-dd-input" id="rc_sap_input" placeholder="All SAP codes" autocomplete="off"
-          oninput="rc_ddFilter('rc_sap_dd')"
-          onfocus="rc_ddOpen('rc_sap_dd')"
-          onblur="rc_ddBlur('rc_sap_dd')"
-          style="min-width:125px;">
-        <div class="rc-dd-list" id="rc_sap_list"></div>
-        <input type="hidden" id="rc_sap">
-      </div>
-
-      <div class="rc-dd" id="rc_store_dd" style="position:relative;">
-        <div id="rc_store_trigger" onclick="rc_storeToggleOpen()" style="height:30px;padding:0 24px 0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;background:#fff url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23888%27/%3E%3C/svg%3E') no-repeat right 8px center;min-width:130px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--g600);user-select:none;">
-          <span id="rc_store_label">All stores</span>
-        </div>
-        <div class="rc-dd-list" id="rc_store_list" style="min-width:220px;padding-top:0;">
-          <div style="padding:6px 8px;border-bottom:1px solid var(--g100);position:sticky;top:0;background:#fff;z-index:2;">
-            <input id="rc_store_search" type="text" placeholder="Search stores…" oninput="rc_storeRender()" onmousedown="event.stopPropagation()" style="width:100%;height:26px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:11px;outline:none;box-sizing:border-box;">
-          </div>
-          <div id="rc_store_items"></div>
-        </div>
-      </div>
-
-      <div class="rc-dd" id="rc_client_dd">
-        <input class="rc-dd-input" id="rc_client_input" placeholder="All clients" autocomplete="off" oninput="rc_ddFilter('rc_client_dd')" onfocus="rc_ddOpen('rc_client_dd')" onblur="rc_ddBlur('rc_client_dd')" style="min-width:130px;">
-        <div class="rc-dd-list" id="rc_client_list"></div>
-        <input type="hidden" id="rc_client">
-      </div>
-
-      <div class="rc-dd" id="rc_brand_dd">
-        <input class="rc-dd-input" id="rc_brand_input" placeholder="All brands" autocomplete="off" oninput="rc_ddFilter('rc_brand_dd')" onfocus="rc_ddOpen('rc_brand_dd')" onblur="rc_ddBlur('rc_brand_dd')">
-        <div class="rc-dd-list" id="rc_brand_list"></div>
-        <input type="hidden" id="rc_brand">
-      </div>
-
-      <div class="rc-dd" id="rc_promoter_dd">
-        <input class="rc-dd-input" id="rc_promoter_input" placeholder="All promoters" autocomplete="off" oninput="rc_ddFilter('rc_promoter_dd')" onfocus="rc_ddOpen('rc_promoter_dd')" onblur="rc_ddBlur('rc_promoter_dd')">
-        <div class="rc-dd-list" id="rc_promoter_list"></div>
-        <input type="hidden" id="rc_promoter">
-      </div>
-
-      <input type="hidden" id="rc_status">
+      <div id="rc_filter_bar" class="rc-filter-bar"></div>
 
       <button onclick="rc_resetFilters()" style="display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;background:#fff;color:var(--g600);border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3v4h4M13 13v-4h-4M3 7a5 5 0 0 1 8.5-3.5M13 9a5 5 0 0 1-8.5 3.5"/></svg>
@@ -315,7 +427,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
       <div id="rc_area" style="background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;width:100%;min-width:0;">
         <div style="padding:48px;text-align:center;color:var(--g400);">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--g300)" style="display:block;margin:0 auto 10px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
-          Select a date range and click Load
+          Select a date range to load data
         </div>
       </div>
     </div>
@@ -356,7 +468,9 @@ const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 
 // ── State ──────────────────────────────────────────────────────────────────
 let allCo=[], allCl=[], allBr=[], allSt=[], allSectors=[], allOps=[];
-let allRec=[], view='pending', selMap={}, currentRid=null;
+let allRec=[], view='home', selMap={}, currentRid=null;
+let main_filterOptions={}, main_filterState={}, main_filterMode={};
+const MAIN_EMPTY='__MAIN_EMPTY__';
 
 // ── API ────────────────────────────────────────────────────────────────────
 async function sbGet(q){const r=await fetch(`${SB}/rest/v1/${q}`,{headers:{...H,'Accept':'application/json'}});if(!r.ok)throw new Error(await r.text());return r.json();}
@@ -395,20 +509,24 @@ async function loadData(){
       sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand'),
       sbGet('GI_stores?select=id,store&visible=eq.true&order=store'),
       sbGet('Sector?select=id,Name,companyid&order=Name'),
-      sbGet('InsightsTracking?select=id,Title,client,brand,sapcode,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,comments_status,powerbi_url,contactName_Email,under_review_date,validated_date,validated_by,first_report_date,email_sent_date&under_review_date=not.is.null&order=under_review_date.desc'),
+      sbGet('InsightsTracking?select=id,Title,client,brand,sapcode,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,comments_status,powerbi_url,powerbi_title,contactName_Email,under_review_date,validated_date,validated_by,first_report_date,email_sent_date&under_review_date=not.is.null&order=under_review_date.desc'),
       sbGet('Contacts_Operations?select=id,firstname,lastname,company,jobtitle&order=lastname'),
     ]);
     allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRec=recs||[]; selMap={};
 
-    const cfil=document.getElementById('co-filter');
-    const prev=cfil.value;
-    cfil.innerHTML='<option value="">All companies</option>'+allCo.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    cfil.value=prev;
+    main_filterOptions={}; main_filterState={}; main_filterMode={};
 
     const mco=document.getElementById('m-co');
     mco.innerHTML='<option value="">— Select company —</option>'+allCo.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
-    applyFilter();
+    if(view==='home'){
+      home_render();
+      home_initIfNeeded(rc_initialized);
+    }else if(view==='rc'){
+      rc_load();
+    }else{
+      applyFilter();
+    }
   }catch(e){toast('Load error: '+e.message,'error');}
   finally{showLoad(false);}
 }
@@ -417,63 +535,313 @@ async function loadData(){
 const todayISO=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
 const isActive=r=>r.startdate&&r.enddate&&r.startdate<=todayISO&&r.enddate>=todayISO;
 
-function setView(v){
-  if(v==='rc'){
-    document.getElementById('hdr-tab-pending').classList.remove('active');
-    document.getElementById('hdr-tab-all').classList.remove('active');
-    document.getElementById('hdr-tab-sent').classList.remove('active');
-    document.getElementById('hdr-tab-sent').style.background='';
-    document.getElementById('hdr-tab-sent').style.borderColor='';
-    document.getElementById('hdr-tab-sent').style.color='';
-    document.getElementById('hdr-tab-rc').classList.add('active');
-    document.getElementById('body').style.display='none';
-    document.getElementById('stats-bar').style.display='none';
-    document.getElementById('rc-page').style.display='flex';
-    document.getElementById('co-filter').style.display='none';
+const MAIN_FILTER_DEFS=[
+  {key:'agency',label:'Agency',values:r=>resolveIds(r.company_ids,allCo,'name')},
+  {key:'sector',label:'Sector',values:r=>shortSectors(r)},
+  {key:'client',label:'Client',values:r=>[shortClient(r)]},
+];
+
+function main_viewRows(){
+  let rows=[...allRec];
+  if(view==='pending')return rows.filter(r=>!r.validated_date&&!r.first_report_date);
+  if(view==='all')return rows
+    .filter(r=>!!r.validated_date||!!r.email_sent_date)
+    .sort((a,b)=>{
+      const sentDiff=(b.email_sent_date?new Date(b.email_sent_date).getTime():0)-(a.email_sent_date?new Date(a.email_sent_date).getTime():0);
+      if(sentDiff)return sentDiff;
+      return (b.validated_date?new Date(b.validated_date).getTime():0)-(a.validated_date?new Date(a.validated_date).getTime():0);
+    });
+  return rows;
+}
+function main_filterValues(row,def){
+  const values=(def.values(row)||[]).map(value=>String(value??'').trim()).filter(Boolean);
+  return values.length?[...new Set(values)]:[MAIN_EMPTY];
+}
+function main_rowMatchesFilters(row,ignoreKey=''){
+  return MAIN_FILTER_DEFS.every(def=>{
+    if(def.key===ignoreKey||(main_filterMode[def.key]||'all')==='all')return true;
+    const selected=main_filterState[def.key]||new Set();
+    return main_filterValues(row,def).some(value=>selected.has(value));
+  });
+}
+function main_populateFilters(baseRows=main_viewRows(),forceAll=false){
+  if(forceAll){main_filterOptions={};main_filterState={};main_filterMode={};}
+  const nextOptions={};
+  MAIN_FILTER_DEFS.forEach(def=>{
+    const mode=main_filterMode[def.key]||'all';
+    const selected=main_filterState[def.key]||new Set();
+    const counts=new Map();
+    baseRows.filter(row=>main_rowMatchesFilters(row,def.key)).forEach(row=>{
+      main_filterValues(row,def).forEach(value=>counts.set(value,(counts.get(value)||0)+1));
+    });
+    nextOptions[def.key]=[...new Set([...counts.keys(),...(mode==='custom'?[...selected]:[])])]
+      .map(value=>({value,label:value===MAIN_EMPTY?'No value':value,count:counts.get(value)||0}))
+      .sort((a,b)=>a.label.localeCompare(b.label,undefined,{numeric:true,sensitivity:'base'}));
+  });
+  MAIN_FILTER_DEFS.forEach(def=>{
+    if(!main_filterMode[def.key])main_filterMode[def.key]='all';
+    if(!main_filterState[def.key])main_filterState[def.key]=new Set();
+    main_filterOptions[def.key]=nextOptions[def.key];
+  });
+
+  const filterBar=document.getElementById('main_filter_bar');
+  if(!filterBar)return;
+  filterBar.innerHTML=MAIN_FILTER_DEFS.map(def=>{
+    const options=main_filterOptions[def.key];
+    const selected=main_filterState[def.key];
+    const allMode=main_filterMode[def.key]==='all';
+    const optionRows=options.map(option=>`<label class="rc-ms-opt">
+      <input type="checkbox" value="${esc(option.value)}"${allMode||selected.has(option.value)?' checked':''} onchange="main_filterChanged('${def.key}',this)">
+      <span>${esc(option.label)}</span><span class="count">${option.count}</span>
+    </label>`).join('');
+    return `<div class="rc-ms" id="main_filter_${def.key}">
+      <button type="button" class="rc-ms-btn" id="main_filter_btn_${def.key}" onclick="main_toggleFilter('${def.key}',event)" aria-expanded="false">
+        <span id="main_filter_label_${def.key}">${esc(def.label)}</span>
+        <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg>
+      </button>
+      <div class="rc-ms-panel" id="main_filter_panel_${def.key}" onclick="event.stopPropagation()">
+        <input class="rc-ms-search" type="text" placeholder="Search ${esc(def.label.toLowerCase())}…" oninput="main_searchFilter('${def.key}',this.value)">
+        <div class="rc-ms-actions"><button type="button" onclick="main_setFilterSelection('${def.key}',true)">Select all</button><button type="button" onclick="main_setFilterSelection('${def.key}',false)">Deselect all</button></div>
+        <div class="rc-ms-list">${optionRows||'<div class="rc-dd-none">No options</div>'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  MAIN_FILTER_DEFS.forEach(def=>main_updateFilterButton(def.key));
+}
+function main_updateFilterButton(key){
+  const def=MAIN_FILTER_DEFS.find(item=>item.key===key);
+  const options=main_filterOptions[key]||[];
+  const selected=main_filterState[key]||new Set();
+  const allMode=(main_filterMode[key]||'all')==='all';
+  let label='All';
+  if(!allMode){
+    if(!selected.size)label='None';
+    else if(selected.size===1){
+      const value=[...selected][0];
+      label=options.find(option=>option.value===value)?.label||value;
+    }else label=`${selected.size} selected`;
+  }
+  const labelEl=document.getElementById('main_filter_label_'+key);
+  const button=document.getElementById('main_filter_btn_'+key);
+  if(labelEl)labelEl.textContent=`${def.label}: ${label}`;
+  if(button)button.classList.toggle('active',!allMode);
+}
+function main_filterChanged(key,changedInput){
+  const root=document.getElementById('main_filter_'+key);
+  const searchValue=root.querySelector('.rc-ms-search')?.value||'';
+  const wasAllMode=(main_filterMode[key]||'all')==='all';
+  main_filterMode[key]='custom';
+  main_filterState[key]=wasAllMode&&changedInput
+    ?new Set([changedInput.value])
+    :new Set([...root.querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value));
+  applyFilter();
+  main_reopenFilter(key,searchValue);
+}
+function main_setFilterSelection(key,checked){
+  const root=document.getElementById('main_filter_'+key);
+  const searchValue=root?.querySelector('.rc-ms-search')?.value||'';
+  main_filterMode[key]=checked?'all':'custom';
+  main_filterState[key]=new Set();
+  applyFilter();
+  main_reopenFilter(key,searchValue);
+}
+function main_reopenFilter(key,searchValue){
+  const panel=document.getElementById('main_filter_panel_'+key);
+  const button=document.getElementById('main_filter_btn_'+key);
+  if(!panel||!button)return;
+  panel.style.display='block';
+  button.setAttribute('aria-expanded','true');
+  const search=panel.querySelector('.rc-ms-search');
+  if(search){search.value=searchValue;main_searchFilter(key,searchValue);search.focus();}
+}
+function main_searchFilter(key,query){
+  const term=String(query||'').trim().toLowerCase();
+  document.querySelectorAll(`#main_filter_${key} .rc-ms-opt`).forEach(option=>{
+    option.style.display=term&&!option.textContent.toLowerCase().includes(term)?'none':'';
+  });
+}
+function main_toggleFilter(key,event){
+  event.stopPropagation();
+  const panel=document.getElementById('main_filter_panel_'+key);
+  const button=document.getElementById('main_filter_btn_'+key);
+  const shouldOpen=panel.style.display!=='block';
+  rc_closeFilterMenus();
+  if(shouldOpen){
+    panel.style.display='block';
+    button.setAttribute('aria-expanded','true');
+    const search=panel.querySelector('.rc-ms-search');
+    if(search){search.value='';main_searchFilter(key,'');search.focus();}
+  }
+}
+function main_resetFilters(silent=false){
+  main_filterOptions={};main_filterState={};main_filterMode={};
+  if(!silent)applyFilter();
+}
+
+let home_loading=false;
+let home_error='';
+let home_agencyFilter='';
+
+function home_syncDatesFromReporting(){
+  const homeFrom=document.getElementById('home_from');
+  const homeTo=document.getElementById('home_to');
+  const rcFrom=document.getElementById('rc_from');
+  const rcTo=document.getElementById('rc_to');
+  if(homeFrom&&rcFrom)homeFrom.value=rcFrom.value;
+  if(homeTo&&rcTo)homeTo.value=rcTo.value;
+}
+function home_dateChanged(){
+  const homeFrom=document.getElementById('home_from').value;
+  const homeTo=document.getElementById('home_to').value;
+  document.getElementById('rc_from').value=homeFrom;
+  document.getElementById('rc_to').value=homeTo;
+  home_loading=true;
+  home_error='';
+  home_render();
+  rc_dateChanged();
+}
+function home_initIfNeeded(forceReload=false){
+  if(!rc_initialized){
     rc_initIfNeeded();
+  }else if(forceReload){
+    rc_load();
+  }
+  home_syncDatesFromReporting();
+  home_render();
+}
+function home_compliance(rows){
+  const excluded=rows.filter(row=>['absent','absent_backup','pending'].includes(row.status)).length;
+  const eligible=Math.max(0,rows.length-excluded);
+  const reported=rows.filter(row=>row.status==='complete').length;
+  return{eligible,reported,pct:eligible?Math.round(reported/eligible*100):0};
+}
+function home_complianceColor(pct){
+  return pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+}
+function home_groupCompliance(rows,valueFor){
+  const groups=new Map();
+  rows.forEach(row=>{
+    const value=String(valueFor(row)||'No value').trim()||'No value';
+    if(!groups.has(value))groups.set(value,[]);
+    groups.get(value).push(row);
+  });
+  return[...groups.entries()].map(([name,groupRows])=>({name,...home_compliance(groupRows)}))
+    .sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+}
+function home_renderCompliance(targetId,groups,selectable=false){
+  const target=document.getElementById(targetId);
+  if(!target)return;
+  if(!groups.length){
+    target.innerHTML='<div class="empty" style="padding:28px 16px;">No compliance data for this period.</div>';
     return;
   }
-  document.getElementById('hdr-tab-rc').classList.remove('active');
-  document.getElementById('rc-page').style.display='none';
-  document.getElementById('co-filter').style.display='';
-  document.getElementById('body').style.display='';
-  document.getElementById('stats-bar').style.display='';
+  target.innerHTML=groups.map(group=>{
+    const color=home_complianceColor(group.pct);
+    const content=`<div class="home-compliance-name">${esc(group.name)}</div>
+      <div class="home-bar"><span style="width:${group.pct}%;background:${color};"></span></div>
+      <div class="home-compliance-pct" style="color:${color};">${group.pct}%</div>`;
+    if(selectable){
+      const active=home_agencyFilter===group.name;
+      return `<button type="button" class="home-compliance-row${active?' active':''}" data-agency="${esc(group.name)}" aria-pressed="${active}" title="Select ${esc(group.name)} · ${group.reported} reported out of ${group.eligible} eligible" onclick="home_selectAgency(this.dataset.agency)">${content}</button>`;
+    }
+    return `<div class="home-compliance-row" title="${group.reported} reported out of ${group.eligible} eligible">${content}</div>`;
+  }).join('');
+}
+function home_selectAgency(agency){
+  home_agencyFilter=home_agencyFilter===agency?'':agency;
+  home_render();
+}
+function home_agencyName(record){
+  return String(rc_agencyLabel(record?.agency)||resolveIds(record?.company_ids,allCo,'name')[0]||'No value').trim()||'No value';
+}
+function home_renderPending(){
+  const target=document.getElementById('home_pending');
+  if(!target)return;
+  const allPending=allRec.filter(record=>!record.validated_date&&!record.first_report_date);
+  const pending=home_agencyFilter
+    ?allPending.filter(record=>resolveIds(record.company_ids,allCo,'name').includes(home_agencyFilter))
+    :allPending;
+  const count=document.getElementById('home_pending_count');
+  if(count)count.textContent=home_agencyFilter?`${pending.length} of ${allPending.length}`:`${allPending.length} total`;
+  if(!pending.length){
+    target.innerHTML=`<div class="empty" style="padding:28px 16px;">No reports waiting for validation${home_agencyFilter?' for '+esc(home_agencyFilter):''}.</div>`;
+    return;
+  }
+  target.innerHTML=pending.map(record=>{
+    const sectors=shortSectors(record).join(', ')||'No sector';
+    const brands=shortBrands(record).join(', ')||'No brand';
+    const clientSap=[shortClient(record),record.sapcode].filter(Boolean).join(' · ');
+    return `<div class="home-pending-row">
+      <div style="min-width:0;">
+        <div class="home-pending-title">${esc(record.Title||'Untitled report')}</div>
+        <div class="home-pending-tags">
+          <span class="home-sector-badge">Sector: ${esc(sectors)}</span>
+          <span class="home-brand-badge">Brand: ${esc(brands)}</span>
+        </div>
+        ${clientSap?`<div class="home-pending-meta">${esc(clientSap)}</div>`:''}
+      </div>
+      <div class="home-pending-date">Since ${esc(fd(record.under_review_date)||'—')}</div>
+    </div>`;
+  }).join('');
+}
+function home_render(){
+  const status=document.getElementById('home_status');
+  if(status){
+    status.textContent=home_loading?'Loading compliance…':home_error?home_error:`${rc_data.length} shifts`;
+    status.style.color=home_error?'var(--red)':'var(--g500)';
+  }
+  const overall=home_compliance(rc_data);
+  const reported=rc_data.filter(row=>row.status==='complete').length;
+  const partial=rc_data.filter(row=>row.status==='partial').length;
+  const missing=rc_data.filter(row=>row.status==='missing').length;
+  const kpis=document.getElementById('home_kpis');
+  if(kpis)kpis.innerHTML=[
+    {value:overall.pct+'%',label:'Compliance',color:home_complianceColor(overall.pct)},
+    {value:reported,label:'Reported',color:'var(--green)'},
+    {value:partial,label:'Partial',color:'var(--amber)'},
+    {value:missing,label:'Missing',color:'var(--red)'},
+  ].map(kpi=>`<div class="home-kpi"><div class="home-kpi-value" style="color:${kpi.color};">${kpi.value}</div><div class="home-kpi-label">${kpi.label}</div></div>`).join('');
+  const agencyGroups=home_groupCompliance(rc_data,home_agencyName);
+  if(home_agencyFilter&&!agencyGroups.some(group=>group.name===home_agencyFilter))home_agencyFilter='';
+  home_renderPending();
+  const sectorRows=home_agencyFilter?rc_data.filter(row=>home_agencyName(row)===home_agencyFilter):rc_data;
+  const sectorContext=document.getElementById('home_sector_context');
+  if(sectorContext)sectorContext.textContent=home_agencyFilter||'All agencies';
+  home_renderCompliance('home_country',agencyGroups,true);
+  home_renderCompliance('home_sector',home_groupCompliance(sectorRows,row=>row.sector));
+}
+
+function setView(v){
   view=v;
-  document.getElementById('hdr-tab-pending').classList.toggle('active',v==='pending');
-  document.getElementById('hdr-tab-all').classList.toggle('active',v==='all');
-  document.getElementById('hdr-tab-sent').classList.toggle('active',v==='sent');
-  // Sent tab gets green styling
-  document.getElementById('hdr-tab-sent').style.background=v==='sent'?'var(--green-light)':'';
-  document.getElementById('hdr-tab-sent').style.borderColor=v==='sent'?'var(--green)':'';
-  document.getElementById('hdr-tab-sent').style.color=v==='sent'?'var(--green)':'';
+  ['home','pending','all','rc'].forEach(key=>document.getElementById('hdr-tab-'+key).classList.toggle('active',v===key));
+  const isHome=v==='home';
+  const isReporting=v==='rc';
+  document.getElementById('home-page').style.display=isHome?'flex':'none';
+  document.getElementById('rc-page').style.display=isReporting?'flex':'none';
+  document.getElementById('main-filter-toolbar').style.display=!isHome&&!isReporting?'flex':'none';
+  document.getElementById('body').style.display=!isHome&&!isReporting?'flex':'none';
+  document.getElementById('stats-bar').style.display=!isHome&&!isReporting?'flex':'none';
+  if(isHome){home_initIfNeeded();return;}
+  if(isReporting){rc_initIfNeeded();return;}
   applyFilter();
 }
 function applyFilter(){
-  const cid=document.getElementById('co-filter').value;
-  let rows=[...allRec];
-  if(view==='pending') rows=rows.filter(r=>!r.validated_date&&!r.first_report_date);
-  else if(view==='all') rows=rows.filter(r=>!!r.validated_date);
-  else if(view==='sent') rows=rows.filter(r=>!!r.email_sent_date&&isActive(r));
-  if(cid) rows=rows.filter(r=>(r.company_ids||[]).map(String).includes(String(cid)));
+  const baseRows=main_viewRows();
+  main_populateFilters(baseRows);
+  const rows=baseRows.filter(row=>main_rowMatchesFilters(row));
   renderStats(rows);
-  if(view==='sent') renderSentCards(rows);
-  else renderCards(rows);
+  renderCards(rows);
 }
 function renderStats(rows){
   const total=rows.length;
-  if(view==='sent'){
-    const cid=document.getElementById('co-filter').value;
-    const allSent=allRec.filter(r=>!!r.email_sent_date&&isActive(r)&&(!cid||(r.company_ids||[]).map(String).includes(String(cid))));
+  if(view==='pending'){
     document.getElementById('stats-bar').innerHTML=`
-      <div class="stat-item"><div class="stat-dot" style="background:var(--green)"></div>Reports Sent (Active): <b class="stat-num">${total}</b></div>
-      <div class="stat-item"><div class="stat-dot" style="background:var(--g300)"></div>Still active in date range today</div>`;
+      <div class="stat-item"><div class="stat-dot" style="background:var(--blue)"></div>Total: <b class="stat-num">${total}</b></div>`;
   }else{
-    const pending=rows.filter(r=>!r.validated_date&&!r.first_report_date).length;
-    const val=rows.filter(r=>!!r.validated_date&&!r.first_report_date).length;
+    const pendingToApprove=allRec.filter(r=>!r.validated_date&&!r.first_report_date).length;
     document.getElementById('stats-bar').innerHTML=`
       <div class="stat-item"><div class="stat-dot" style="background:var(--blue)"></div>Total: <b class="stat-num">${total}</b></div>
-      <div class="stat-item"><div class="stat-dot" style="background:var(--amber)"></div>Pending: <b class="stat-num">${pending}</b></div>
-      <div class="stat-item"><div class="stat-dot" style="background:var(--green)"></div>Validated: <b class="stat-num">${val}</b></div>`;
+      <div class="stat-item"><div class="stat-dot" style="background:var(--amber)"></div>Pending to approve: <b class="stat-num">${pendingToApprove}</b></div>`;
   }
 }
 function renderSentCards(rows){
@@ -565,6 +933,7 @@ function buildSentCard(r){
       <!-- Col 4: PBI -->
       <div class="rv-col-right" style="justify-content:center;">
         ${pbi}
+        <div class="sent-date-callout">Was sent on<br><strong>${fd(r.email_sent_date)||'—'}</strong></div>
       </div>
 
     </div>
@@ -574,7 +943,7 @@ function buildSentCard(r){
 function renderCards(rows){
   const body=document.getElementById('body');
   if(!rows.length){
-    const msg=view==='pending'?'No records pending validation.':'No records under review.';
+    const msg=view==='pending'?'No reports awaiting validation.':'No records under review.';
     body.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>${msg}</div>`;
     return;
   }
@@ -582,8 +951,87 @@ function renderCards(rows){
 }
 
 // ── Card builder ───────────────────────────────────────────────────────────
+function buildValidatedSentCard(r){
+  const brands=shortBrands(r), stores=shortStores(r), client=shortClient(r), sectors=shortSectors(r);
+  const rawContact=String(r.contactName_Email||'').trim();
+  const contacts=[];
+  const contactPattern=/([^<,]+?)\s*<([^>]+@[^>]+)>/g;
+  let contactMatch;
+  while((contactMatch=contactPattern.exec(rawContact))!==null){
+    contacts.push({name:contactMatch[1].trim(),email:contactMatch[2].trim()});
+  }
+  if(rawContact&&!contacts.length)contacts.push({name:rawContact,email:''});
+
+  const pbi=r.powerbi_url
+    ?`<a href="${esc(r.powerbi_url)}" target="_blank" rel="noopener noreferrer" class="pbi-link">
+        <svg viewBox="0 0 24 24"><path d="M3 3h7v4H3zm0 6h7v12H3zm9-6h9v18h-9z"/></svg>
+        Open Power BI
+      </a>`
+    :`<span class="pbi-none">No Power BI link set</span>`;
+  const undoButton=r.email_sent_date
+    ?`<button class="btn-unvalidate" disabled title="Validation cannot be undone after the report has been sent">Undo validation</button>`
+    :`<button class="btn-unvalidate" onclick="doUnvalidate(${r.id})">Undo validation</button>`;
+
+  return `<div class="rv-card validated${r.email_sent_date?' sent':''}">
+    <div class="rv-validated-grid">
+      <div class="rv-v-section">
+        <div class="rv-v-label">Report</div>
+        <div class="rv-brand-store">
+          ${brands.map(b=>`<span>${esc(b)}</span>`).join('<span class="rv-dot">·</span>')}
+          ${brands.length&&stores.length?'<span class="rv-dot">|</span>':''}
+          ${stores.map(s=>`<span>${esc(s)}</span>`).join('<span class="rv-dot">·</span>')}
+        </div>
+        ${sectors.length?`<div style="font-size:10.5px;color:var(--blue);font-weight:600;">${esc(sectors.join(' · '))}</div>`:''}
+        <div class="rv-client-sap">${r.sapcode?`<span class="rv-sap">SAP ${esc(r.sapcode)}</span>`:'<span class="rv-sap">No SAP code</span>'}</div>
+        <div class="rv-dates">
+          ${r.startdate?`<div><span class="rv-dl">Start</span>${fd(r.startdate)}</div>`:''}
+          ${r.enddate?`<div><span class="rv-dl">End</span>${fd(r.enddate)}</div>`:''}
+        </div>
+      </div>
+
+      <div class="rv-v-section rv-v-client">
+        <div class="rv-v-label">Client info</div>
+        <div class="rv-v-client-name">${esc(client||'Client not linked')}</div>
+        <div class="rv-v-contact-label">Sent to</div>
+        ${contacts.length
+          ?contacts.map(contact=>`<div class="rv-v-contact"><strong>${esc(contact.name)}</strong>${contact.email?`<br>${esc(contact.email)}`:''}</div>`).join('')
+          :`<div class="rv-v-empty">Not sent yet — the recipient will appear here.</div>`}
+      </div>
+
+      <div class="rv-v-section">
+        <div class="rv-v-label">Timeline</div>
+        <div class="rv-v-timeline">
+          <div class="rv-v-step">
+            <span class="rv-v-dot"></span>
+            <div><div class="rv-v-step-label">Review → Validate</div><div class="rv-v-step-date">${fd(r.under_review_date)||'—'} → ${fd(r.validated_date)||'—'}</div></div>
+          </div>
+          <div class="rv-v-step sent">
+            <span class="rv-v-dot"></span>
+            <div><div class="rv-v-step-label">Validate → Sent</div><div class="rv-v-step-date">${fd(r.validated_date)||'—'} → ${r.email_sent_date?fd(r.email_sent_date):'Waiting'}</div></div>
+          </div>
+        </div>
+        <div class="rv-validator-prominent">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span>Validated by ${esc(r.validated_by||'—')}</span>
+        </div>
+        ${undoButton}
+      </div>
+
+      <div class="rv-v-section rv-v-powerbi">
+        <div class="rv-v-label">Power BI</div>
+        <div class="pbi-report-name">${esc(r.powerbi_title||'Power BI name not set')}</div>
+        ${pbi}
+        ${r.email_sent_date
+          ?`<div class="rv-v-sent">Was sent on<br>${fd(r.email_sent_date)}</div>`
+          :`<div class="rv-v-ready">Ready to send<br>Validated ${fd(r.validated_date)||'—'}</div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
 function buildCard(r){
   const isVal=!!r.validated_date;
+  if(isVal||r.email_sent_date)return buildValidatedSentCard(r);
   const brands=shortBrands(r), stores=shortStores(r), client=shortClient(r), sectors=shortSectors(r);
 
   // Time elapsed
@@ -599,11 +1047,17 @@ function buildCard(r){
 
   // Power BI
   const pbi=r.powerbi_url
-    ?`<a href="${esc(r.powerbi_url)}" target="_blank" class="pbi-link">
-        <svg viewBox="0 0 24 24"><path d="M3 3h7v4H3zm0 6h7v12H3zm9-6h9v18h-9z"/></svg>
-        Open Power BI
-      </a>`
-    :`<span class="pbi-none">No Power BI link set</span>`;
+    ?`<div class="pbi-action-row">
+        <span class="pbi-report-name">${esc(r.powerbi_title||'Power BI name not set')}</span>
+        <a href="${esc(r.powerbi_url)}" target="_blank" class="pbi-link">
+          <svg viewBox="0 0 24 24"><path d="M3 3h7v4H3zm0 6h7v12H3zm9-6h9v18h-9z"/></svg>
+          Open Power BI
+        </a>
+      </div>`
+    :`<div class="pbi-action-row">
+        <span class="pbi-report-name">${esc(r.powerbi_title||'Power BI name not set')}</span>
+        <span class="pbi-none">No Power BI link set</span>
+      </div>`;
 
   // Notes
   const notesHtml=!isVal
@@ -617,13 +1071,16 @@ function buildCard(r){
 
   // Validate column content
   const {contacts: validateContacts, filtered: validateFiltered}=isVal?{contacts:[],filtered:false}:getOpsForRecord(r.id);
+  const undoButton=r.email_sent_date
+    ?`<button class="btn-unvalidate" disabled title="Validation cannot be undone after the report has been sent">Undo validation</button>`
+    :`<button class="btn-unvalidate" onclick="doUnvalidate(${r.id})">Undo validation</button>`;
   const validateCol=isVal
     ?`<span class="rv-status validated">Validated</span>
       <div class="rv-validator">
         <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
         ${esc(r.validated_by||'—')}
       </div>
-      <button class="btn-unvalidate" onclick="doUnvalidate(${r.id})">Undo validation</button>
+      ${undoButton}
       ${timeBadge}`
     :`<span class="rv-status pending">Awaiting</span>
       <div style="display:flex;align-items:center;gap:5px;width:100%;">
@@ -642,7 +1099,10 @@ function buildCard(r){
   // Right col
   const rightCol=isVal
     ?`<div style="font-size:10.5px;font-weight:600;color:var(--green);">✓ Ready to send</div>
-      <div style="font-size:10.5px;color:var(--g400);margin-top:2px;line-height:1.4;">Use main app to email client.</div>`
+      <div style="font-size:10.5px;color:var(--g500);margin-top:2px;line-height:1.4;">Validated on ${fd(r.validated_date)||'—'}</div>
+      ${r.email_sent_date
+        ?`<div style="font-size:10.5px;color:var(--green);font-weight:700;margin-top:3px;line-height:1.4;">Sent on ${fd(r.email_sent_date)}</div>`
+        :`<div style="font-size:10.5px;color:var(--g400);margin-top:2px;line-height:1.4;">Use main app to email client.</div>`}`
     :`<div style="font-size:10.5px;color:var(--g400);">Validate to enable sending report to client.</div>`;
 
   return `<div class="rv-card ${isVal?'validated':'pending'}">
@@ -739,6 +1199,8 @@ async function doValidate(rid){
   finally{showLoad(false);}
 }
 async function doUnvalidate(rid){
+  const current=allRec.find(r=>r.id===rid);
+  if(current?.email_sent_date){toast('Validation cannot be removed after the report has been sent.','error');return;}
   try{
     showLoad(true);
     await sbPatch('InsightsTracking',rid,{validated_date:null,validated_by:null});
@@ -783,20 +1245,23 @@ async function saveContact(){
     const mx=await sbGet('Contacts_Operations?select=id&order=id.desc&limit=1');
     const newId=mx.length?parseInt(mx[0].id)+1:1;
     const data={id:newId,firstname:fn,lastname:ln,email:email||null,jobtitle:jt||null,company:co?parseInt(co):null};
+    const targetRid=currentRid;
+    const fullName=fn+' '+ln;
     await sbPost('Contacts_Operations',data);
     allOps.push(data);
-    if(currentRid!==null){
-      const fullName=fn+' '+ln;
-      selMap[currentRid]={id:newId,name:fullName};
-      const vsel=document.getElementById('vsel-'+currentRid);
+    closeModal();
+    await loadData();
+    if(targetRid!==null){
+      const vsel=document.getElementById('vsel-'+targetRid);
       if(vsel){
-        const opt=new Option(`${fullName}${jt?' — '+jt:''}`,newId,true,true);
-        vsel.add(opt);
+        if(![...vsel.options].some(option=>String(option.value)===String(newId))){
+          vsel.add(new Option(`${fullName}${jt?' — '+jt:''}`,newId));
+        }
+        vsel.value=String(newId);
         vsel.dispatchEvent(new Event('change'));
       }
     }
-    closeModal();
-    toast('Contact added and selected!','success');
+    toast('Contact added. The page was refreshed and the new name is selected.','success');
   }catch(e){toast('Failed: '+e.message,'error');}
   finally{showLoad(false);}
 }
@@ -805,8 +1270,16 @@ async function saveContact(){
 let rc_data = [];
 let rc_initialized = false;
 let rc_dateTimer = null;
+let rc_loadRequest = 0;
+let rc_filterOptions = {};
+let rc_filterState = {};
+let rc_filterMode = {};
+let rc_forceAllFilters = false;
+let rc_kpiFilter = '';
+const RC_EMPTY = '__RC_EMPTY__';
 
 function rc_dateChanged(){
+  home_syncDatesFromReporting();
   clearTimeout(rc_dateTimer);
   rc_dateTimer = setTimeout(()=>{ if(document.getElementById('rc_from').value && document.getElementById('rc_to').value) rc_load(); }, 400);
 }
@@ -838,12 +1311,14 @@ function rc_exportExcel(){
   const sheetData = rows.map(r => ({
     'Date': r.day,
     'Mission': r.missionId ?? '',
+    'SAP Code': r.campaignSapCode || r.trackingSapCode || '',
+    'Client': r.schedClient || '',
+    'Campaign': r.campaignName || '',
+    'Sector': r.sector || '',
+    'Report Type': r.reportTypes.join(', ') || 'No report type',
     'Promoter': r.promoter,
     'Sched. Store': r.schedStore || '',
-    'Client': r.schedClient || '',
     'Sched. Brand': r.schedBrand || '',
-    'Campaign': r.campaignName || '',
-    'Campaign SAP Code': r.campaignSapCode || '',
     'Questionnaire': r.hasQ ? 'Yes' : 'No',
     'Sales': r.hasS ? 'Yes' : 'No',
     'Reported Store(s)': r.reportedStores.join(', '),
@@ -857,12 +1332,14 @@ function rc_exportExcel(){
   ws['!cols'] = [
     {wch:11},  // Date
     {wch:10},  // Mission
+    {wch:18},  // SAP Code
+    {wch:20},  // Client
+    {wch:42},  // Campaign
+    {wch:18},  // Sector
+    {wch:24},  // Report Type
     {wch:22},  // Promoter
     {wch:32},  // Scheduled Store
-    {wch:20},  // Client
     {wch:18},  // Scheduled Brand
-    {wch:42},  // Campaign
-    {wch:20},  // Campaign SAP Code
     {wch:14},  // Questionnaire
     {wch:10},  // Sales
     {wch:24},  // Reported Stores
@@ -881,28 +1358,16 @@ function rc_exportExcel(){
 }
 
 function rc_resetFilters(){
-  rc_selectedCampaigns = new Set();
-  rc_noCampaignsSelected = false;
-  rc_inclCampUpdateLabel();
-  rc_inclCampRender();
-  ['rc_agency'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.value = '';
-  });
-  const stEl = document.getElementById('rc_status');
-  if(stEl) stEl.value = '';
-  rc_selectedStores = new Set();
-  rc_storeUpdateLabel();
-  ['rc_brand','rc_promoter','rc_client','rc_sap'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.value='';
-    const inp = document.getElementById(id+'_input');
-    if(inp){ inp.value=''; }
-  });
+  rc_filterOptions={};
+  rc_filterState={};
+  rc_filterMode={};
+  rc_forceAllFilters=true;
+  rc_kpiFilter='';
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.toISOString().split('T')[0];
   document.getElementById('rc_from').value = yStr;
   document.getElementById('rc_to').value   = yStr;
+  home_syncDatesFromReporting();
   rc_load();
 }
 
@@ -913,14 +1378,66 @@ function rc_initIfNeeded(){
     const yStr = yesterday.toISOString().split('T')[0];
     document.getElementById('rc_from').value = yStr;
     document.getElementById('rc_to').value   = yStr;
+    home_syncDatesFromReporting();
     rc_load();
   }
+}
+
+const rcNorm=value=>String(value??'')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
+const rcTrackingIds=value=>{
+  if(Array.isArray(value))return value.map(String).filter(Boolean);
+  if(typeof value==='string')return value.replace(/[{}]/g,'').split(',').map(v=>v.trim()).filter(Boolean);
+  return[];
+};
+const rcIsNoReporting=record=>{
+  const ids=rcTrackingIds(record?.report_type_ids);
+  return ids.length>0&&ids.every(id=>id==='9');
+};
+const rcSameValue=(left,right)=>!!rcNorm(left)&&rcNorm(left)===rcNorm(right);
+const rcLooseValue=(left,right)=>{
+  const a=rcNorm(left),b=rcNorm(right);
+  return !!a&&!!b&&(a===b||(a.length>=6&&b.length>=6&&(a.includes(b)||b.includes(a))));
+};
+const rcNewestTracking=(left,right)=>
+  String(right.startdate||'').localeCompare(String(left.startdate||''))||
+  String(right.createdat||'').localeCompare(String(left.createdat||''))||
+  (Number(right.id)||0)-(Number(left.id)||0);
+function rcFindTrackingRecord(schedule,trackingRows){
+  const scheduleStores=[schedule.store_code,schedule.pos].filter(Boolean);
+  const scheduleSap=rcNorm(schedule.campaign_sapcode);
+  const inRange=trackingRows.filter(record=>(!record.startdate||schedule.day>=record.startdate)&&(!record.enddate||schedule.day<=record.enddate));
+  if(scheduleSap){
+    const exactSapMatches=inRange.filter(record=>rcNorm(record.sapcode)===scheduleSap).sort(rcNewestTracking);
+    if(exactSapMatches.length)return exactSapMatches[0];
+  }
+  const scored=inRange
+    .map(record=>{
+      const trackingSap=rcNorm(record.sapcode);
+      if(scheduleSap&&trackingSap&&scheduleSap!==trackingSap)return{record,score:-1};
+      const titleMatch=rcLooseValue(schedule.campaign_name,record.Title);
+      const brandMatch=shortBrands(record).some(brand=>rcSameValue(schedule.brand,brand));
+      const storeMatch=shortStores(record).some(store=>scheduleStores.some(value=>rcSameValue(value,store)));
+      const clientMatch=rcSameValue(schedule.client,shortClient(record)||record.client);
+      return{record,score:(titleMatch?6:0)+(brandMatch?4:0)+(storeMatch?3:0)+(clientMatch?1:0)};
+    })
+    .filter(item=>item.score>=4)
+    .sort((a,b)=>b.score-a.score);
+  if(!scored.length)return null;
+  if(scored.length>1&&scored[0].score===scored[1].score)return null;
+  return scored[0].record;
 }
 
 async function rc_load(){
   const from = document.getElementById('rc_from').value;
   const to   = document.getElementById('rc_to').value;
-  if(!from || !to){ toast('Please set a date range','error'); return; }
+  if(!from || !to){ home_loading=false;home_error='Select both dates';home_render();toast('Please set a date range','error');return; }
+  if(from>to){ home_loading=false;home_error='Invalid date range';home_render();toast('The From date must be before the To date','error');return; }
+  const requestId=++rc_loadRequest;
+  home_loading=true;
+  home_error='';
+  home_render();
 
   document.getElementById('rc_area').innerHTML = `
     <div style="padding:48px;text-align:center;color:var(--g400);">
@@ -932,9 +1449,13 @@ async function rc_load(){
   document.getElementById('rc_sync_badge').innerHTML = '';
 
   try{
-    const schedRows = await sbGet(
-      `GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_sapcode,campaign_active,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&campaign_active=eq.true&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`
-    );
+    const [schedRows,trackingRows,reportTypeRows,storesWithSector] = await Promise.all([
+      sbGet(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`),
+      sbGet('InsightsTracking?select=id,Title,client,brand,sapcode,store,brand_ids,store_ids,client_fk,report_type_ids,startdate,enddate,createdat,first_report_date,under_review_date,cancelled_date,not_sent_date'),
+      sbGet('report_types?select=id,type&order=type'),
+      sbGet('GI_stores?select=id,store,Sector_id'),
+    ]);
+    if(requestId!==rc_loadRequest)return;
 
     // Reporting Check only: hide excluded campaign types for every client
     const EXCLUDED_CAMPAIGN_TERMS = [
@@ -956,13 +1477,18 @@ async function rc_load(){
       return !isExcludedCampaign;
     });
 
-    // Build pos_id → sector name map
-    const storesWithSector = await sbGet('GI_stores?select=id,store,Sector_id');
-    const sectorMap = new Map(allSectors.map(s=>[s.id, s.Name]));
-    const posToSector = new Map(storesWithSector.map(s=>[s.id, sectorMap.get(s.Sector_id)||null]));
+    const sectorNameById = new Map(allSectors.map(s=>[String(s.id),s.Name]));
+    const sectorByStore = new Map(storesWithSector
+      .filter(store=>store.store&&store.Sector_id!=null)
+      .map(store=>[rcNorm(store.store),sectorNameById.get(String(store.Sector_id))||'']));
 
     if(!reportingSchedRows.length){
+      rc_data=[];
+      rc_populateFilters(true);
+      rc_render();
       document.getElementById('rc_area').innerHTML = '<div style="padding:48px;text-align:center;color:var(--g400);">No scheduled shifts found for this period.</div>';
+      home_loading=false;
+      home_render();
       return;
     }
 
@@ -980,7 +1506,12 @@ async function rc_load(){
       seen.add(key); return true;
     });
 
-    const lastSynced = deduped.reduce((latest, r) => r.synced_at > latest ? r.synced_at : latest, deduped[0].synced_at);
+    const linkedSchedules=deduped.map(schedule=>({schedule,tracking:rcFindTrackingRecord(schedule,trackingRows)}));
+    const eligibleSchedules=linkedSchedules
+      .filter(item=>!item.tracking||(!item.tracking.cancelled_date&&!rcIsNoReporting(item.tracking)))
+      .map(item=>item.schedule);
+    const trackingBySchedule=new Map(linkedSchedules.map(item=>[item.schedule,item.tracking]));
+    const lastSynced=deduped.reduce((latest,r)=>r.synced_at&&r.synced_at>latest?r.synced_at:latest,'');
 
     const questRows = await sbGet(
       `legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Brand,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`
@@ -996,6 +1527,7 @@ async function rc_load(){
     const salesRows = await sbGet(
       `legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Brand&Date=gte.${from}&Date=lte.${to}`
     );
+    if(requestId!==rc_loadRequest)return;
     const sMap = {};
     salesRows.forEach(s => {
       const idKey   = `${s.Date}|${s.Promoterid}|${(s.Store||'').toUpperCase().trim()}`;
@@ -1003,7 +1535,8 @@ async function rc_load(){
       [idKey, nameKey].forEach(k => { if(!sMap[k]) sMap[k]=[]; sMap[k].push(s); });
     });
 
-    rc_data = deduped.map(r => {
+    const reportTypeById=new Map(reportTypeRows.map(type=>[String(type.id),type.type]));
+    rc_data = eligibleSchedules.map(r => {
       const storeCode = (r.store_code||'').toUpperCase().trim();
       // Primary: match by promoter_id + store
       const idKey     = `${r.day}|${r.promoter_id}|${storeCode}`;
@@ -1014,7 +1547,7 @@ async function rc_load(){
       let sEntries = sMap[idKey] || sMap[nameKey] || [];
 
       // If still empty and promoter has only one shift that day, grab all entries for that promoter
-      const schedCount = deduped.filter(x => x.day===r.day && x.promoter_id===r.promoter_id).length;
+      const schedCount = eligibleSchedules.filter(x => x.day===r.day && x.promoter_id===r.promoter_id).length;
       if(!qEntries.length && schedCount === 1){
         const allQId   = `${r.day}|${r.promoter_id}|`;
         const allQName = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|`;
@@ -1030,6 +1563,7 @@ async function rc_load(){
 
       const hasQ = qEntries.length > 0;
       const hasS = sEntries.length > 0;
+      const tracking=trackingBySchedule.get(r)||null;
 
       const reportedStores = [...new Set([...qEntries.map(e=>e.Store), ...sEntries.map(e=>e.Store)].filter(Boolean))];
       const reportedBrands = [...new Set([...qEntries.map(e=>e.Brand), ...sEntries.map(e=>e.Brand)].filter(Boolean))];
@@ -1053,29 +1587,36 @@ async function rc_load(){
         schedStore: r.pos || r.store_code,
         schedStoreCode: r.store_code,
         schedBrand: r.brand,
-        schedClient: r.client,
+        schedClient: r.client||(tracking?shortClient(tracking):'')||tracking?.client||'',
         campaignName: r.campaign_name,
         campaignSapCode: r.campaign_sapcode,
+        trackingSapCode: tracking?.sapcode||'',
+        reportTypes: rcTrackingIds(tracking?.report_type_ids).map(id=>reportTypeById.get(id)||`Type ${id}`),
         missionId: r.mission_id,
         agency: r.agency,
         hasQ, hasS,
         reportedStores, reportedBrands,
         pieces: (hasQ ? pieces : null),
         turnover: (hasQ ? turnover : null),
-        sector: posToSector.get(r.pos_id) || null,
-        posId: r.pos_id || null,
+        sector: sectorByStore.get(rcNorm(r.store_code))||sectorByStore.get(rcNorm(r.pos))||'',
         timeslotStatus: r.timeslot_status || null,
         status,
       };
     });
 
-    rc_populateFilters();
+    rc_populateFilters(rc_forceAllFilters);
+    rc_forceAllFilters=false;
     rc_render();
+    home_loading=false;
+    home_render();
 
     document.getElementById('rc_sync_badge').innerHTML =
       `<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;">\ud83d\udd04 Azure sync ${rc_timeAgo(lastSynced)}</span>`;
 
   } catch(e){
+    home_loading=false;
+    home_error='Compliance unavailable';
+    home_render();
     document.getElementById('rc_area').innerHTML =
       `<div style="padding:48px;text-align:center;color:var(--red);">Error: ${e.message}</div>`;
   }
@@ -1763,28 +2304,207 @@ function rc_storeUpdateLabel(){
   }
 }
 
-function rc_populateFilters(){
-  rc_refreshDynamicFilters();
+const RC_FILTER_DEFS = [
+  {key:'agency',label:'Agency',values:r=>[r.agency]},
+  {key:'sector',label:'Sector',values:r=>[r.sector]},
+  {key:'campaign',label:'Campaign',values:r=>[r.campaignName]},
+  {key:'client',label:'Client',values:r=>[r.schedClient]},
+  {key:'brand',label:'Brand',values:r=>[r.schedBrand]},
+  {key:'store',label:'Store',values:r=>[r.schedStoreCode||r.schedStore]},
+  {key:'promoter',label:'Promoter',values:r=>[r.promoter]},
+  {key:'sapcode',label:'SAP Code',values:r=>[r.campaignSapCode||r.trackingSapCode]},
+  {key:'reportType',label:'Report Type',values:r=>r.reportTypes},
+  {key:'status',label:'Status',values:r=>[r.status],staticOptions:[
+    {value:'complete',label:'Reported'},
+    {value:'partial',label:'Partial'},
+    {value:'missing',label:'Missing'},
+    {value:'absent',label:'Absent'},
+    {value:'absent_backup',label:'Absent + Backup'},
+    {value:'pending',label:'Pending'},
+  ]},
+];
+
+function rcFilterValues(row,def){
+  const values=(def.values(row)||[]).map(v=>String(v??'').trim()).filter(Boolean);
+  return values.length?[...new Set(values)]:[RC_EMPTY];
+}
+function rcRowMatchesFilters(row,ignoreKey=''){
+  return RC_FILTER_DEFS.every(def=>{
+    if(def.key===ignoreKey)return true;
+    if((rc_filterMode[def.key]||'all')==='all')return true;
+    const selected=rc_filterState[def.key]||new Set();
+    return rcFilterValues(row,def).some(value=>selected.has(value));
+  });
+}
+function rcApplyKpiFilter(rows){
+  if(!rc_kpiFilter)return rows;
+  if(rc_kpiFilter==='reported'||rc_kpiFilter==='compliance')return rows.filter(row=>row.status==='complete');
+  return rows.filter(row=>row.status===rc_kpiFilter);
+}
+function rc_getFilteredRows(includeKpi=true){
+  const rows=rc_data.filter(row=>rcRowMatchesFilters(row));
+  return includeKpi?rcApplyKpiFilter(rows):rows;
+}
+function rc_selectKpi(key){
+  rc_kpiFilter=key==='all'?'':(rc_kpiFilter===key?'':key);
+  rc_render();
+}
+function rc_populateFilters(forceAll=false){
+  if(forceAll){
+    rc_filterMode={};
+    rc_filterState={};
+  }
+  const nextOptions={};
+  RC_FILTER_DEFS.forEach(def=>{
+    const mode=rc_filterMode[def.key]||'all';
+    const selected=rc_filterState[def.key]||new Set();
+    const counts=new Map();
+    rc_data.filter(row=>rcRowMatchesFilters(row,def.key))
+      .forEach(row=>rcFilterValues(row,def).forEach(value=>counts.set(value,(counts.get(value)||0)+1)));
+    const keepSelected=value=>mode==='custom'&&selected.has(value);
+    nextOptions[def.key]=def.staticOptions
+      ? def.staticOptions.filter(option=>counts.has(option.value)||keepSelected(option.value))
+          .map(option=>({...option,count:counts.get(option.value)||0}))
+      : [...new Set([...counts.keys(),...(mode==='custom'?[...selected]:[])])]
+          .map(value=>({value,label:value===RC_EMPTY?'No value':value,count:counts.get(value)||0}))
+          .sort((a,b)=>a.label.localeCompare(b.label,undefined,{numeric:true,sensitivity:'base'}));
+  });
+  RC_FILTER_DEFS.forEach(def=>{
+    if(!rc_filterMode[def.key])rc_filterMode[def.key]='all';
+    if(!rc_filterState[def.key])rc_filterState[def.key]=new Set();
+    rc_filterOptions[def.key]=nextOptions[def.key];
+  });
+
+  const filterBar=document.getElementById('rc_filter_bar');
+  if(!filterBar)return;
+  filterBar.innerHTML=RC_FILTER_DEFS.map(def=>{
+    const options=rc_filterOptions[def.key];
+    const selected=rc_filterState[def.key];
+    const allMode=rc_filterMode[def.key]==='all';
+    const optionRows=options.map(option=>`<label class="rc-ms-opt">
+      <input type="checkbox" value="${esc(option.value)}"${allMode||selected.has(option.value)?' checked':''} onchange="rc_filterChanged('${def.key}',this)">
+      <span>${esc(option.label)}</span><span class="count">${option.count}</span>
+    </label>`).join('');
+    return `<div class="rc-ms" id="rc_filter_${def.key}">
+      <button type="button" class="rc-ms-btn" id="rc_filter_btn_${def.key}" onclick="rc_toggleFilter('${def.key}',event)" aria-expanded="false">
+        <span id="rc_filter_label_${def.key}">${esc(def.label)}</span>
+        <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg>
+      </button>
+      <div class="rc-ms-panel" id="rc_filter_panel_${def.key}" onclick="event.stopPropagation()">
+        <input class="rc-ms-search" type="text" placeholder="Search ${esc(def.label.toLowerCase())}…" oninput="rc_searchFilter('${def.key}',this.value)">
+        <div class="rc-ms-actions"><button type="button" onclick="rc_setFilterSelection('${def.key}',true)">Select all</button><button type="button" onclick="rc_setFilterSelection('${def.key}',false)">Deselect all</button></div>
+        <div class="rc-ms-list">${optionRows||'<div class="rc-dd-none">No options</div>'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  RC_FILTER_DEFS.forEach(def=>rc_updateFilterButton(def.key));
+}
+function rc_updateFilterButton(key){
+  const def=RC_FILTER_DEFS.find(item=>item.key===key);
+  const options=rc_filterOptions[key]||[];
+  const selected=rc_filterState[key]||new Set();
+  const allMode=(rc_filterMode[key]||'all')==='all';
+  let label='All';
+  if(!allMode){
+    if(!selected.size)label='None';
+    else if(selected.size===1){
+      const value=[...selected][0];
+      label=options.find(option=>option.value===value)?.label||value;
+    }else label=`${selected.size} selected`;
+  }
+  const labelEl=document.getElementById('rc_filter_label_'+key);
+  const button=document.getElementById('rc_filter_btn_'+key);
+  if(labelEl)labelEl.textContent=`${def.label}: ${label}`;
+  if(button)button.classList.toggle('active',!allMode);
+}
+function rc_filterChanged(key,changedInput){
+  const root=document.getElementById('rc_filter_'+key);
+  const searchValue=root.querySelector('.rc-ms-search')?.value||'';
+  const wasAllMode=(rc_filterMode[key]||'all')==='all';
+  rc_filterMode[key]='custom';
+  rc_filterState[key]=wasAllMode&&changedInput
+    ? new Set([changedInput.value])
+    : new Set([...root.querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value));
+  rc_populateFilters();
+  rc_render();
+  const panel=document.getElementById('rc_filter_panel_'+key);
+  const button=document.getElementById('rc_filter_btn_'+key);
+  if(panel&&button){
+    panel.style.display='block';
+    button.setAttribute('aria-expanded','true');
+    const search=panel.querySelector('.rc-ms-search');
+    search.value=searchValue;
+    rc_searchFilter(key,searchValue);
+    search.focus();
+  }
+}
+function rc_setFilterSelection(key,checked){
+  const root=document.getElementById('rc_filter_'+key);
+  const searchValue=root.querySelector('.rc-ms-search')?.value||'';
+  rc_filterMode[key]=checked?'all':'custom';
+  rc_filterState[key]=new Set();
+  rc_populateFilters();
+  rc_render();
+  const panel=document.getElementById('rc_filter_panel_'+key);
+  const button=document.getElementById('rc_filter_btn_'+key);
+  if(panel&&button){
+    panel.style.display='block';
+    button.setAttribute('aria-expanded','true');
+    const search=panel.querySelector('.rc-ms-search');
+    search.value=searchValue;
+    rc_searchFilter(key,searchValue);
+    search.focus();
+  }
+}
+function rc_searchFilter(key,query){
+  const term=rcNorm(query);
+  document.querySelectorAll(`#rc_filter_${key} .rc-ms-opt`).forEach(option=>{
+    option.style.display=term&&!rcNorm(option.textContent).includes(term)?'none':'';
+  });
+}
+function rc_closeFilterMenus(){
+  document.querySelectorAll('.rc-ms-panel').forEach(panel=>{panel.style.display='none';});
+  document.querySelectorAll('.rc-ms-btn').forEach(button=>button.setAttribute('aria-expanded','false'));
+}
+function rc_toggleFilter(key,event){
+  event.stopPropagation();
+  const panel=document.getElementById('rc_filter_panel_'+key);
+  const button=document.getElementById('rc_filter_btn_'+key);
+  const shouldOpen=panel.style.display!=='block';
+  rc_closeFilterMenus();
+  if(shouldOpen){
+    panel.style.display='block';
+    button.setAttribute('aria-expanded','true');
+    const search=panel.querySelector('.rc-ms-search');
+    search.value='';
+    rc_searchFilter(key,'');
+    search.focus();
+  }
 }
 
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.rc-ms'))rc_closeFilterMenus();
+});
+
 function rc_render(){
-  let rows = rc_getFilteredRows();
+  const contextRows=rc_getFilteredRows(false);
+  let rows=rcApplyKpiFilter([...contextRows]);
 
   rows.sort((a,b) => {
     if(a.day !== b.day) return b.day.localeCompare(a.day);
     return (a.promoter||'').localeCompare(b.promoter||'');
   });
 
-  const total         = rows.length;
-  const complete      = rows.filter(r=>r.status==='complete').length;
-  const partial       = rows.filter(r=>r.status==='partial').length;
-  const missing       = rows.filter(r=>r.status==='missing').length;
-  const absent        = rows.filter(r=>r.status==='absent').length;
-  const absentBackup  = rows.filter(r=>r.status==='absent_backup').length;
-  const pending       = rows.filter(r=>r.status==='pending').length;
+  const total         = contextRows.length;
+  const complete      = contextRows.filter(r=>r.status==='complete').length;
+  const partial       = contextRows.filter(r=>r.status==='partial').length;
+  const missing       = contextRows.filter(r=>r.status==='missing').length;
+  const absent        = contextRows.filter(r=>r.status==='absent').length;
+  const absentBackup  = contextRows.filter(r=>r.status==='absent_backup').length;
+  const pending       = contextRows.filter(r=>r.status==='pending').length;
   const pct           = (total-absent-absentBackup-pending) ? Math.round(complete/(total-absent-absentBackup-pending)*100) : 0;
-  const totalPieces   = rows.reduce((n,r)=>n+(r.pieces||0),0);
-  const totalTurnover = rows.reduce((n,r)=>n+(r.turnover||0),0);
+  const totalPieces   = contextRows.reduce((n,r)=>n+(r.pieces||0),0);
+  const totalTurnover = contextRows.reduce((n,r)=>n+(r.turnover||0),0);
 
   const from = document.getElementById('rc_from')?.value || '';
   const to   = document.getElementById('rc_to')?.value   || '';
@@ -1795,27 +2515,22 @@ function rc_render(){
       `${total} displayed · ${complete} reported · ${from} → ${to}`;
   }
 
-  const curStatus = document.getElementById('rc_status')?.value || '';
   document.getElementById('rc_kpis').innerHTML = [
-    { val: total,        label:'Promoters',      col:'var(--blue)',  bg:'#fff',               status:'' },
-    { val: complete,     label:'Reported',        col:'var(--green)', bg:'var(--green-light)', status:'complete' },
-    { val: partial,      label:'Partial',         col:'var(--amber)', bg:'var(--amber-light)', status:'partial' },
-    { val: missing,      label:'Missing',         col:'var(--red)',   bg:'var(--red-light)',   status:'missing' },
-    { val: absent,       label:'Absent',          col:'var(--red)',   bg:'var(--red-light)',   status:'absent' },
-    { val: absentBackup, label:'Absent+Backup',   col:'#ea580c',     bg:'#fff7ed',            status:'absent_backup' },
-    { val: pct+'%',      label:'Compliance',      col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)', bg:'var(--g50)', status:null },
-    { val: totalPieces.toLocaleString(),          label:'Pieces sold', col:'var(--g700)', bg:'var(--g50)', status:null },
-    { val: totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}), label:'Turnover', col:'var(--g900)', bg:'var(--g50)', status:null },
-  ].map(s => {
-    const isClickable = s.status !== null;
-    const isActive    = isClickable && curStatus === s.status && s.status !== '';
-    const outline     = isActive ? `box-shadow:0 0 0 2.5px ${s.col};` : '';
-    const cursor      = isClickable && s.status !== '' ? 'cursor:pointer;' : '';
-    const onclick     = isClickable && s.status !== '' ? `onclick="rc_toggleStatus('${s.status}')"` : '';
-    return `<div ${onclick} style="background:${s.bg};border:1px solid var(--g200);border-radius:8px;padding:8px 16px;display:flex;flex-direction:column;gap:1px;min-width:95px;box-shadow:0 1px 3px rgba(0,0,0,.05);${outline}${cursor}transition:box-shadow .15s;">
-      <span style="font-size:20px;font-weight:800;color:${s.col};font-family:monospace;">${s.val}</span>
-      <span style="font-size:10.5px;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">${s.label}${isActive?' ✕':''}</span>
-    </div>`;
+    {key:'all',           val:total,        label:'Promoters',       col:'var(--blue)',  bg:'#fff',              title:'Show all promoters'},
+    {key:'reported',      val:complete,     label:'Reported',        col:'var(--green)', bg:'var(--green-light)',title:'Show reported shifts'},
+    {key:'partial',       val:partial,      label:'Partial',         col:'var(--amber)', bg:'var(--amber-light)',title:'Show partial shifts'},
+    {key:'missing',       val:missing,      label:'Missing',         col:'var(--red)',   bg:'var(--red-light)',  title:'Show missing shifts'},
+    {key:'absent',        val:absent,       label:'Absent',          col:'var(--red)',   bg:'var(--red-light)',  title:'Show absent shifts'},
+    {key:'absent_backup', val:absentBackup, label:'Absent+Backup',   col:'#ea580c',      bg:'#fff7ed',           title:'Show absent shifts with a backup'},
+    {key:'compliance',    val:pct+'%',      label:'Compliance',      col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)',bg:'var(--g50)',title:'Show compliant shifts'},
+    {key:'pieces',        val:totalPieces.toLocaleString(),label:'Pieces sold',col:'var(--g700)',bg:'var(--g50)',static:true},
+    {key:'turnover',      val:totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}),label:'Turnover',col:'var(--g900)',bg:'var(--g50)',static:true},
+  ].map(s=>{
+    const content=`<span style="font-size:20px;font-weight:800;color:${s.col};font-family:monospace;">${s.val}</span>
+      <span style="font-size:10.5px;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">${s.label}</span>`;
+    if(s.static)return `<div class="rc-kpi rc-kpi-static" style="--kpi-color:${s.col};background:${s.bg};">${content}</div>`;
+    const active=(s.key==='all'&&!rc_kpiFilter)||rc_kpiFilter===s.key;
+    return `<button type="button" class="rc-kpi ${active?'active':''}" style="--kpi-color:${s.col};background:${s.bg};" title="${esc(s.title)}" aria-pressed="${active}" onclick="rc_selectKpi('${s.key}')">${content}</button>`;
   }).join('');
 
   if(!rows.length){
@@ -1888,6 +2603,7 @@ function rc_render(){
       const promoterFirst  = promoterParts.shift() || '—';
       const promoterLast   = promoterParts.join(' ');
       const statusCell     = (isAbsent || isAbsentBackup) ? `<span style="color:var(--g300);">—</span>` : badge(r.status);
+      const displaySap     = r.campaignSapCode || r.trackingSapCode;
 
       html += `<tr style="border-bottom:1px solid var(--g100);height:70px;" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
         <td style="padding:9px 8px;vertical-align:middle;overflow-wrap:anywhere;">
@@ -1910,8 +2626,8 @@ function rc_render(){
           ${r.campaignName
             ? `<div style="font-size:9.5px;color:var(--g400);line-height:1.2;margin-top:3px;">${r.campaignName}</div>`
             : ''}
-          ${r.campaignSapCode
-            ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${r.campaignSapCode}</div>`
+          ${displaySap
+            ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${displaySap}</div>`
             : ''}
         </td>
         <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasQ)}</td>
