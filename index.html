@@ -842,6 +842,7 @@ function home_render(){
 }
 
 function setView(v){
+  const pageChanged=v!==view;
   view=v;
   ['home','pending','closing','all','rc'].forEach(key=>document.getElementById('hdr-tab-'+key).classList.toggle('active',v===key));
   const isHome=v==='home';
@@ -854,7 +855,7 @@ function setView(v){
   document.getElementById('body').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
   document.getElementById('stats-bar').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
   if(isHome){home_initIfNeeded();return;}
-  if(isReporting){rc_initIfNeeded();return;}
+  if(isReporting){rc_initIfNeeded(pageChanged);return;}
   if(isClosing){oc_initIfNeeded();return;}
   applyFilter();
 }
@@ -1448,8 +1449,9 @@ function rc_resetFilters(){
   rc_load();
 }
 
-function rc_initIfNeeded(){
-  rc_loadTrackingPickers();
+async function rc_initIfNeeded(forceRefresh=false){
+  if(forceRefresh){rc_trackingRecords=[];rc_trackingReportTypes=[];}
+  await rc_loadTrackingPickers();
   if(!rc_initialized){
     rc_initialized = true;
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -1458,7 +1460,7 @@ function rc_initIfNeeded(){
     document.getElementById('rc_to').value   = yStr;
     home_syncDatesFromReporting();
     rc_load();
-  }
+  }else if(forceRefresh)rc_load();
 }
 
 async function rc_loadTrackingPickers(){
@@ -2499,7 +2501,7 @@ function rc_populateFilters(forceAll=false){
     const selected=rc_filterState[def.key];
     const allMode=rc_filterMode[def.key]==='all';
     const optionRows=options.map(option=>`<label class="rc-ms-opt">
-      <input type="checkbox" value="${esc(option.value)}"${allMode||selected.has(option.value)?' checked':''} onchange="rc_filterChanged('${def.key}',this)">
+      <input type="checkbox" value="${esc(option.value)}"${selected.has(option.value)?' checked':''} onchange="rc_filterChanged('${def.key}',this)">
       <span>${esc(option.label)}</span><span class="count">${option.count}</span>
     </label>`).join('');
     return `<div class="rc-ms" id="rc_filter_${def.key}">
@@ -2509,7 +2511,7 @@ function rc_populateFilters(forceAll=false){
       </button>
       <div class="rc-ms-panel" id="rc_filter_panel_${def.key}" onclick="event.stopPropagation()">
         <input class="rc-ms-search" type="text" placeholder="Search ${esc(def.label.toLowerCase())}…" oninput="rc_searchFilter('${def.key}',this.value)">
-        <div class="rc-ms-actions"><button type="button" onclick="rc_setFilterSelection('${def.key}',true)">Select all</button><button type="button" onclick="rc_setFilterSelection('${def.key}',false)">Deselect all</button></div>
+        <div class="rc-ms-actions"><button type="button" onclick="rc_setFilterSelection('${def.key}',true)">Show all</button><button type="button" onclick="rc_setFilterSelection('${def.key}',false)">Clear results</button></div>
         <div class="rc-ms-list">${optionRows||'<div class="rc-dd-none">No options</div>'}</div>
       </div>
     </div>`;
