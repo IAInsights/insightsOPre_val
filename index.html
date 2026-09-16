@@ -343,18 +343,14 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 <div class="header">
   <h1>Reporting Compliance &amp; Validation Hub</h1>
   <details class="app-release">
-    <summary title="Open version history">v2026.09.16.10</summary>
-    <summary title="Open version history">v2026.09.16.12</summary>
+    <summary title="Open version history">v2026.09.16.13</summary>
     <div class="release-panel">
-      <div class="release-heading">What&rsquo;s new in v2026.09.16.10 &middot; Startup Recovery</div>
-      <div class="release-heading">What&rsquo;s new in v2026.09.16.12 &middot; Operations Recovery</div>
+      <div class="release-heading">What&rsquo;s new in v2026.09.16.13 &middot; Home Loading Fix</div>
       <div class="release-date">Updated 16 September 2026</div>
       <ul class="release-list">
-        <li>The companion Insights Manager now recovers cleanly from startup data errors.</li>
-        <li>Both applications now display the same release version.</li>
-        <li>Operations now reuses the signed-in Insights Manager session.</li>
-        <li>Secondary reference-list errors no longer block the complete application.</li>
-        <li>Load failures remain visible with the exact failing data source and a Retry button.</li>
+        <li>The Home date range is initialized immediately instead of waiting for campaign lists.</li>
+        <li>Compliance loading now completes independently from campaign-picker loading.</li>
+        <li>Operations keeps authenticated requests and persistent recovery messages.</li>
       </ul>
     </div>
   </details>
@@ -507,7 +503,6 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 <script>
 const SB  = 'https://qooytgsjjzvkqaumoqmw.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvb3l0Z3Nqanp2a3FhdW1vcW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUzNjM0ODMsImV4cCI6MjA0MDkzOTQ4M30.Oai2A8Qii0aOfD91NFwHsNq3Tgq1yFHwih-GRFnsEC0';
-const H   = {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'};
 const AUTH_STORAGE_KEY='insights_supabase_session_v1';
 let operationsAuthRefreshPromise=null;
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -553,10 +548,6 @@ async function sbHeaders(extra={}){
   const token=await operationsAccessToken();
   return{'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation',...extra};
 }
-async function sbGet(q){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:{...H,'Accept':'application/json'}});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function sbGetAll(q,pageSize=1000){const rows=[];for(let from=0;from<200000;from+=pageSize){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:{...H,'Accept':'application/json','Range-Unit':'items','Range':`${from}-${from+pageSize-1}`}});if(!r.ok)throw new Error(await r.text());const page=await r.json();rows.push(...page);if(page.length<pageSize)return rows;}throw new Error('The data set is larger than the supported reporting range. Please narrow the dates.');}
-async function sbPatch(t,id,d){const r=await sbFetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
-async function sbPost(t,d){const r=await sbFetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
 async function sbGet(q){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json'})});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbGetAll(q,pageSize=1000){const rows=[];for(let from=0;from<200000;from+=pageSize){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json','Range-Unit':'items','Range':`${from}-${from+pageSize-1}`})});if(!r.ok)throw new Error(await r.text());const page=await r.json();rows.push(...page);if(page.length<pageSize)return rows;}throw new Error('The data set is larger than the supported reporting range. Please narrow the dates.');}
 async function sbPatch(t,id,d){const r=await sbFetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:await sbHeaders(),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
@@ -644,7 +635,6 @@ async function applyReportingCompliance(records,{autoConfirm=false}={}){
       record.reporting_compliance_absent=absent;
       record.reporting_compliance_backup=backup;
       record.reporting_compliance_pct=eligible.length?Math.round(reported/eligible.length*100):0;
-      if(autoConfirm&&record.reporting_compliance_pct>=80&&!record.reporting_compliant){
       if(autoConfirm&&record.reporting_compliance_pct>=75&&!record.reporting_compliant){
         updates.push(sbPatch('InsightsTracking',record.id,{reporting_compliant:true}).then(()=>{record.reporting_compliant=true;oc_schemaReady=true;}).catch(()=>{}));
       }
@@ -657,7 +647,6 @@ async function applyReportingCompliance(records,{autoConfirm=false}={}){
 
 function reportingComplianceHtml(record){
   if(!Number.isFinite(record.reporting_compliance_pct))return '<div style="font-size:10.5px;color:var(--g400);">Compliance unavailable</div>';
-  const color=record.reporting_compliance_pct>=80?'var(--green)':record.reporting_compliance_pct>=50?'var(--amber)':'var(--red)';
   const color=record.reporting_compliance_pct>=75?'var(--green)':record.reporting_compliance_pct>=50?'var(--amber)':'var(--red)';
   const absent=Number(record.reporting_compliance_absent)||0;
   const backup=Number(record.reporting_compliance_backup)||0;
@@ -700,13 +689,6 @@ async function loadData(){
   operationsLoadNotice('');
   try{
     const [co,cl,br,st,sec,recs,ops]=await Promise.all([
-      sbGet('GI_company?select=id,name&active=eq.true&order=name'),
-      sbGet('GI_clients?select=id,client&active=eq.true&order=client'),
-      sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand'),
-      sbGet('GI_stores?select=id,store&visible=eq.true&order=store'),
-      sbGet('Sector?select=id,Name,companyid&order=Name'),
-      sbGet('InsightsTracking?select=*&under_review_date=not.is.null&order=under_review_date.desc'),
-      sbGet('Contacts_Operations?select=id,firstname,lastname,company,jobtitle&order=lastname'),
       operationsStartupGet('Companies',()=>sbGet('GI_company?select=id,name&active=eq.true&order=name')),
       operationsStartupGet('Clients',()=>sbGet('GI_clients?select=id,client&active=eq.true&order=client')),
       operationsStartupGet('Brands',()=>sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand')),
@@ -725,7 +707,7 @@ async function loadData(){
 
     if(view==='home'){
       home_render();
-      home_initIfNeeded(rc_initialized);
+      await home_initIfNeeded(rc_initialized);
     }else if(view==='rc'){
       rc_load();
     }else if(view==='closing'){
@@ -733,7 +715,6 @@ async function loadData(){
     }else{
       applyFilter();
     }
-  }catch(e){toast('Load error: '+e.message,'error');}
     if(operationsStartupWarnings.length)operationsLoadNotice(`Some reference lists could not be refreshed. Core reporting records remain available. ${operationsStartupWarnings.join(' | ')}`);
   }catch(e){
     const message='Load failed — '+operationsReadableError(e);
@@ -912,14 +893,16 @@ function home_dateChanged(){
   home_render();
   rc_dateChanged();
 }
-function home_initIfNeeded(forceReload=false){
+async function home_initIfNeeded(forceReload=false){
+  let loadingTask=Promise.resolve();
   if(!rc_initialized){
-    rc_initIfNeeded();
+    loadingTask=rc_initIfNeeded();
   }else if(forceReload){
-    rc_load();
+    loadingTask=rc_load();
   }
   home_syncDatesFromReporting();
   home_render();
+  await loadingTask;
 }
 function home_compliance(rows){
   const excluded=rows.filter(row=>['absent','absent_backup','pending'].includes(row.status)).length;
@@ -928,7 +911,6 @@ function home_compliance(rows){
   return{eligible,reported,pct:eligible?Math.round(reported/eligible*100):0};
 }
 function home_complianceColor(pct){
-  return pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
   return pct>=75?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
 }
 function home_groupCompliance(rows,valueFor){
@@ -1160,7 +1142,6 @@ function buildSentCard(r){
 function selectMainWorkflow(id){mainWorkflowSelected[view]=id;applyFilter();}
 function mainWorkflowCompliance(record){
   if(!Number.isFinite(record.reporting_compliance_pct))return '<span class="oc-state missing">Unavailable</span>';
-  return `<span class="oc-state ${record.reporting_compliance_pct>=80?'ok':'missing'}">${record.reporting_compliance_pct}%</span>`;
   return `<span class="oc-state ${record.reporting_compliance_pct>=75?'ok':'missing'}">${record.reporting_compliance_pct}%</span>`;
 }
 function mainWorkflowDetail(record){
@@ -1178,7 +1159,6 @@ function mainWorkflowDetail(record){
   }else{
     action=`<div class="oc-state ok">✓ Validated by ${esc(record.validated_by||'—')}</div>${isSent?`<div style="margin-top:8px;padding:9px;border-radius:7px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;text-align:center;">Final report was sent · ${fd(record.email_sent_date||record.first_report_date)||'—'}</div>`:`<button class="btn-unvalidate" onclick="doUnvalidate(${record.id})" style="width:100%;margin-top:8px;">Undo validation</button>`}`;
   }
-  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${esc(missions)} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=80?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">Open Power BI report</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
   return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${esc(missions)} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">Open Power BI report</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
 }
 function renderCards(rows){
@@ -1578,11 +1558,9 @@ function oc_render(){
   if(!list)return;
   if(!rows.length){list.innerHTML='<div class="oc-empty">No animations ending in the next 5 days match these filters.</div>';document.getElementById('oc-detail').innerHTML='<div class="oc-empty">No animation selected.</div>';return;}
   if(!rows.some(record=>String(record.id)===String(oc_selectedId)))oc_selectedId=rows[0].id;
-  list.innerHTML=`<table class="oc-table"><colgroup><col style="width:58px"><col style="width:184px"><col style="width:90px"><col style="width:118px"><col style="width:118px"><col style="width:74px"><col style="width:102px"><col style="width:58px"></colgroup><thead><tr><th>Alert</th><th>Animation / mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>KPIs</th><th>Global Feedback</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const selected=String(record.id)===String(oc_selectedId),pbi=ocSafeUrl(record.powerbi_url),pct=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total}`:'—',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0;return `<tr class="oc-row${selected?' selected':''}" onclick="oc_select(${record.id})"><td><span class="oc-alert">N-5</span></td><td><div class="oc-name">${esc(record.Title||'Untitled animation')}</div><div class="oc-meta">${esc(ocClient(record))}</div><button class="oc-mission" onclick="event.stopPropagation();oc_openReporting(${record.id})">Mission ${esc(rcMissionIds(record).join(', ')||'—')} → Reporting Check</button></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-state ${record.reporting_compliant?'ok':'missing'}">${pct}</span><div class="oc-meta">Absent: ${absent}${backup?` · Backup: ${backup}`:''}</div></td><td><span class="oc-state ${record.kpis_ok?'ok':'missing'}">${record.kpis_ok?'✓ OK':'✕ Missing'}</span></td><td><span class="oc-state ${record.global_feedback_received?'ok':'missing'}">${record.global_feedback_received?'✓ Received':'✕ Missing'}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Open</a>`:'—'}</td></tr>`;}).join('')}</tbody></table>`;
   list.innerHTML=`<table class="oc-table"><colgroup><col style="width:58px"><col style="width:184px"><col style="width:90px"><col style="width:118px"><col style="width:118px"><col style="width:74px"><col style="width:102px"><col style="width:58px"></colgroup><thead><tr><th>Alert</th><th>Animation / mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>KPIs</th><th>Global Feedback</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const selected=String(record.id)===String(oc_selectedId),pbi=ocSafeUrl(record.powerbi_url),pct=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total}`:'—',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0;return `<tr class="oc-row${selected?' selected':''}" onclick="oc_select(${record.id})"><td><span class="oc-alert">${ocCountdownLabel(record.enddate)}</span></td><td><div class="oc-name">${esc(record.Title||'Untitled animation')}</div><div class="oc-meta">${esc(ocClient(record))}</div><button class="oc-mission" onclick="event.stopPropagation();oc_openReporting(${record.id})">Mission ${esc(rcMissionIds(record).join(', ')||'—')} → Reporting Check</button></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-state ${record.reporting_compliant?'ok':'missing'}">${pct}</span><div class="oc-meta">Absent: ${absent}${backup?` · Backup: ${backup}`:''}</div></td><td><span class="oc-state ${record.kpis_ok?'ok':'missing'}">${record.kpis_ok?'✓ OK':'✕ Missing'}</span></td><td><span class="oc-state ${record.global_feedback_received?'ok':'missing'}">${record.global_feedback_received?'✓ Received':'✕ Missing'}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Open</a>`:'—'}</td></tr>`;}).join('')}</tbody></table>`;
   oc_renderDetail(rows.find(record=>String(record.id)===String(oc_selectedId))||rows[0]);
 }
-function oc_renderDetail(record){const detail=document.getElementById('oc-detail');if(!detail||!record)return;const ready=!!(record.reporting_compliant&&record.kpis_ok&&record.global_feedback_received),pbi=ocSafeUrl(record.powerbi_url),absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,complianceHelp=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${absent}${backup?` · Absent with backup: ${backup}`:''}`:'Compliance unavailable';detail.innerHTML=`<div class="oc-detail-head"><div class="oc-eyebrow">Final client check · N-5</div><div class="oc-detail-title">${esc(record.Title||'Untitled animation')}</div><div class="oc-detail-sub">Mission ${esc(rcMissionIds(record).join(', ')||'—')} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Final status · read only</div>${oc_readOnlyCheck(!!record.reporting_compliant,'Reporting compliance (80% minimum)',complianceHelp)}${oc_readOnlyCheck(!!record.kpis_ok,'KPIs checked by Insights','Results and data quality confirmed')}${oc_readOnlyCheck(!!record.global_feedback_received,'Global feedback','Final feedback received')}</div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">Open Power BI report</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div></div><div class="oc-detail-foot" style="color:${ready?'var(--green)':'var(--amber)'}">Operations view only · ${ready?'all final checks are complete':'updates are made in Insights Check'}</div>`;}
 function oc_renderDetail(record){const detail=document.getElementById('oc-detail');if(!detail||!record)return;const ready=!!(record.reporting_compliant&&record.kpis_ok&&record.global_feedback_received),pbi=ocSafeUrl(record.powerbi_url),absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,complianceHelp=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${absent}${backup?` · Absent with backup: ${backup}`:''}`:'Compliance unavailable';detail.innerHTML=`<div class="oc-detail-head"><div class="oc-eyebrow">Final client check · ${ocCountdownLabel(record.enddate)}</div><div class="oc-detail-title">${esc(record.Title||'Untitled animation')}</div><div class="oc-detail-sub">Mission ${esc(rcMissionIds(record).join(', ')||'—')} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Final status · read only</div>${oc_readOnlyCheck(!!record.reporting_compliant,'Reporting compliance (75% minimum)',complianceHelp)}${oc_readOnlyCheck(!!record.kpis_ok,'KPIs checked by Insights','Results and data quality confirmed')}${oc_readOnlyCheck(!!record.global_feedback_received,'Global feedback','Final feedback received')}</div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">Open Power BI report</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div></div><div class="oc-detail-foot" style="color:${ready?'var(--green)':'var(--amber)'}">Operations view only · ${ready?'all final checks are complete':'updates are made in Insights Check'}</div>`;}
 async function oc_openReporting(id){const record=oc_rows.find(item=>String(item.id)===String(id));if(!record)return;rc_selectedTrackingId=String(record.id);rc_initialized=true;setView('rc');await rc_loadTrackingPickers();const campaign=document.getElementById('rc_record_campaign'),sap=document.getElementById('rc_record_sap');if(campaign)campaign.value=String(record.id);if(sap)sap.value=String(record.id);document.getElementById('rc_from').value=record.startdate||ocToday();document.getElementById('rc_to').value=record.enddate||ocToday();rc_filterOptions={};rc_filterState={};rc_filterMode={};rc_forceAllFilters=true;rc_kpiFilter='';await rc_load();rc_filterMode.campaign='custom';rc_filterState.campaign=new Set([String(record.Title||record.brand||'')].filter(Boolean));rc_filterMode.sapcode='custom';rc_filterState.sapcode=new Set([String(record.sapcode||'')].filter(Boolean));rc_populateFilters();rc_render();}
 
@@ -1700,7 +1678,6 @@ function rc_resetFilters(){
 
 async function rc_initIfNeeded(forceRefresh=false){
   if(forceRefresh){rc_trackingRecords=[];rc_trackingReportTypes=[];}
-  await rc_loadTrackingPickers();
   if(!rc_initialized){
     rc_initialized = true;
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -1708,8 +1685,16 @@ async function rc_initIfNeeded(forceRefresh=false){
     document.getElementById('rc_from').value = yStr;
     document.getElementById('rc_to').value   = yStr;
     home_syncDatesFromReporting();
-    rc_load();
-  }else if(forceRefresh)rc_load();
+    home_loading=true;
+    home_error='';
+    home_render();
+    const pickerTask=rc_loadTrackingPickers();
+    const reportingTask=rc_load();
+    await Promise.allSettled([pickerTask,reportingTask]);
+  }else{
+    await rc_loadTrackingPickers();
+    if(forceRefresh)await rc_load();
+  }
 }
 
 async function rc_loadTrackingPickers(){
@@ -2991,7 +2976,6 @@ function rc_render(){
     {key:'missing',       val:missing,      label:'Missing',         col:'var(--red)',   bg:'var(--red-light)',  title:'Show missing shifts'},
     {key:'absent',        val:absent,       label:'Absent',          col:'var(--red)',   bg:'var(--red-light)',  title:'Show absent shifts'},
     {key:'absent_backup', val:absentBackup, label:'Absent+Backup',   col:'#ea580c',      bg:'#fff7ed',           title:'Show absent shifts with a backup'},
-    {key:'compliance',    val:pct+'%',      label:'Compliance',      col:pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)',bg:'var(--g50)',title:'Show compliant shifts'},
     {key:'compliance',    val:pct+'%',      label:'Compliance',      col:pct>=75?'var(--green)':pct>=50?'var(--amber)':'var(--red)',bg:'var(--g50)',title:'Show compliant shifts'},
     {key:'pieces',        val:totalPieces.toLocaleString(),label:'Pieces sold',col:'var(--g700)',bg:'var(--g50)',static:true},
     {key:'turnover',      val:totalTurnover.toLocaleString(undefined,{maximumFractionDigits:0}),label:'Turnover',col:'var(--g900)',bg:'var(--g50)',static:true},
