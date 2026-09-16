@@ -1730,9 +1730,12 @@ async function rc_load(){
       seen.add(key); return true;
     });
 
+    const reportTypeById=new Map(reportTypeRows.map(type=>[String(type.id),type.type]));
+    const isBiInsights=record=>rcTrackingIds(record?.report_type_ids)
+      .some(id=>String(reportTypeById.get(id)||'').trim().toLowerCase()==='bi insights');
     const linkedSchedules=deduped.map(schedule=>({schedule,tracking:rcFindTrackingRecord(schedule,trackingRows)}));
     const eligibleSchedules=linkedSchedules
-      .filter(item=>!item.tracking||(!item.tracking.cancelled_date&&!rcIsNoReporting(item.tracking)))
+      .filter(item=>item.tracking&&!item.tracking.cancelled_date&&!rcIsNoReporting(item.tracking)&&isBiInsights(item.tracking))
       .map(item=>item.schedule);
     const trackingBySchedule=new Map(linkedSchedules.map(item=>[item.schedule,item.tracking]));
     const lastSynced=deduped.reduce((latest,r)=>r.synced_at&&r.synced_at>latest?r.synced_at:latest,'');
@@ -1759,7 +1762,6 @@ async function rc_load(){
       [idKey, nameKey].forEach(k => { if(!sMap[k]) sMap[k]=[]; sMap[k].push(s); });
     });
 
-    const reportTypeById=new Map(reportTypeRows.map(type=>[String(type.id),type.type]));
     rc_data = eligibleSchedules.map(r => {
       const storeCode = (r.store_code||'').toUpperCase().trim();
       // Primary: match by promoter_id + store
