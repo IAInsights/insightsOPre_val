@@ -1416,6 +1416,7 @@ let oc_rows=[],oc_initialized=false,oc_selectedId=null,oc_schemaReady=true;
 let rc_trackingRecords=[],rc_trackingReportTypes=[],rc_selectedTrackingId=null;
 const RC_MIN_DATE='2026-01-01';
 const ocSelect='id,Title,client,brand,sapcode,mission_id,mission_ids,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,powerbi_url,powerbi_title,reporting_compliant,kpis_ok,global_feedback_received,first_report_date,email_sent_date,cancelled_date,not_sent_date';
+const ocStatusSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,powerbi_url,powerbi_title,reporting_compliant,kpis_ok,global_feedback_received,first_report_date,email_sent_date,cancelled_date,not_sent_date';
 const ocFallbackSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,powerbi_url,powerbi_title,first_report_date,email_sent_date,cancelled_date,not_sent_date';
 const ocToday=()=>new Date().toISOString().split('T')[0];
 const ocPlusDays=days=>{const date=new Date();date.setDate(date.getDate()+days);return date.toISOString().split('T')[0];};
@@ -1423,13 +1424,37 @@ const ocClient=record=>shortClient(record)||record.client||'';
 const ocAgencies=record=>resolveIds(record.company_ids,allCo,'name').filter(Boolean);
 const ocSectors=record=>shortSectors(record);
 const ocSafeUrl=value=>{try{const url=new URL(String(value||''));return /^https?:$/.test(url.protocol)?url.href:'';}catch{return'';}};
-async function oc_initIfNeeded(){if(!oc_initialized){oc_initialized=true;await oc_load();}else oc_render();}
+async function oc_initIfNeeded(){oc_initialized=true;await oc_load();}
+
+let oc_lastFocusRefresh=0;
+function oc_refreshOnFocus(){
+  if(view!=='closing'||document.hidden)return;
+  const now=Date.now();
+  if(now-oc_lastFocusRefresh<1000)return;
+  oc_lastFocusRefresh=now;
+  oc_load();
+}
+document.addEventListener('visibilitychange',oc_refreshOnFocus);
+window.addEventListener('focus',oc_refreshOnFocus);
 async function oc_load(){
   const list=document.getElementById('oc-list');if(list)list.innerHTML='<div class="oc-empty">Loading animations ending soon…</div>';
   try{
     const from=ocToday(),to=ocPlusDays(5);
-    try{oc_rows=await sbGet(`InsightsTracking?select=${ocSelect}&enddate=gte.${from}&enddate=lte.${to}&order=enddate.asc`);oc_schemaReady=true;}
-    catch(error){oc_rows=await sbGet(`InsightsTracking?select=${ocFallbackSelect}&enddate=gte.${from}&enddate=lte.${to}&order=enddate.asc`);oc_rows.forEach(record=>{record.reporting_compliant=false;record.kpis_ok=false;record.global_feedback_received=false;});oc_schemaReady=false;}
+    try{
+      oc_rows=await sbGet(`InsightsTracking?select=${ocSelect}&enddate=gte.${from}&enddate=lte.${to}&order=enddate.asc`);
+      oc_schemaReady=true;
+    }catch(missionIdsError){
+      try{
+        // mission_ids is optional during rollout. Keep the live Closing Check
+        // values even when that newer column has not been added yet.
+        oc_rows=await sbGet(`InsightsTracking?select=${ocStatusSelect}&enddate=gte.${from}&enddate=lte.${to}&order=enddate.asc`);
+        oc_schemaReady=true;
+      }catch(statusColumnsError){
+        oc_rows=await sbGet(`InsightsTracking?select=${ocFallbackSelect}&enddate=gte.${from}&enddate=lte.${to}&order=enddate.asc`);
+        oc_rows.forEach(record=>{record.reporting_compliant=false;record.kpis_ok=false;record.global_feedback_received=false;});
+        oc_schemaReady=false;
+      }
+    }
     oc_rows=oc_rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!record.first_report_date&&!record.email_sent_date);
     await applyReportingCompliance(oc_rows,{autoConfirm:true});
     if(!oc_rows.some(record=>String(record.id)===String(oc_selectedId)))oc_selectedId=oc_rows[0]?.id??null;
