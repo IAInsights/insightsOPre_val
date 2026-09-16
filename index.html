@@ -344,17 +344,17 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <h1>Reporting Compliance &amp; Validation Hub</h1>
   <details class="app-release">
     <summary title="Open version history">v2026.09.16.10</summary>
-    <summary title="Open version history">v2026.09.16.11</summary>
+    <summary title="Open version history">v2026.09.16.12</summary>
     <div class="release-panel">
       <div class="release-heading">What&rsquo;s new in v2026.09.16.10 &middot; Startup Recovery</div>
-      <div class="release-heading">What&rsquo;s new in v2026.09.16.11 &middot; Closing Countdown</div>
+      <div class="release-heading">What&rsquo;s new in v2026.09.16.12 &middot; Operations Recovery</div>
       <div class="release-date">Updated 16 September 2026</div>
       <ul class="release-list">
         <li>The companion Insights Manager now recovers cleanly from startup data errors.</li>
         <li>Both applications now display the same release version.</li>
-        <li>Reporting compliance now passes automatically from 75%.</li>
-        <li>Closing Soon alerts count down dynamically from N-5 to N-0.</li>
-        <li>Both applications use the same compliance colours and labels.</li>
+        <li>Operations now reuses the signed-in Insights Manager session.</li>
+        <li>Secondary reference-list errors no longer block the complete application.</li>
+        <li>Load failures remain visible with the exact failing data source and a Retry button.</li>
       </ul>
     </div>
   </details>
@@ -508,6 +508,8 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 const SB  = 'https://qooytgsjjzvkqaumoqmw.supabase.co';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvb3l0Z3Nqanp2a3FhdW1vcW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUzNjM0ODMsImV4cCI6MjA0MDkzOTQ4M30.Oai2A8Qii0aOfD91NFwHsNq3Tgq1yFHwih-GRFnsEC0';
 const H   = {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+const AUTH_STORAGE_KEY='insights_supabase_session_v1';
+let operationsAuthRefreshPromise=null;
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fd  = d=>{if(!d)return'';const p=(d+'').split('T')[0].split('-');return`${p[0]} - ${MONTHS[parseInt(p[1])-1]} - ${p[2]}`;};
 const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -522,10 +524,43 @@ const MAIN_EMPTY='__MAIN_EMPTY__';
 // ── API ────────────────────────────────────────────────────────────────────
 const SB_REQUEST_TIMEOUT_MS=30000;
 async function sbFetch(url,options={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),SB_REQUEST_TIMEOUT_MS);try{return await fetch(url,{...options,signal:controller.signal});}catch(error){if(error?.name==='AbortError')throw new Error('Database request timed out. Please refresh the page.');throw error;}finally{clearTimeout(timer);}}
+function readOperationsSession(){
+  try{return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)||'null');}catch(error){return null;}
+}
+async function operationsAccessToken(){
+  const session=readOperationsSession();
+  if(!session?.access_token)return KEY;
+  const expiresAt=Number(session.expires_at)||0;
+  if(expiresAt>Date.now()/1000+60)return session.access_token;
+  if(!session.refresh_token)return session.access_token;
+  if(operationsAuthRefreshPromise)return operationsAuthRefreshPromise;
+  operationsAuthRefreshPromise=(async()=>{
+    try{
+      const response=await sbFetch(`${SB}/auth/v1/token?grant_type=refresh_token`,{
+        method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})
+      });
+      if(!response.ok)return session.access_token;
+      const refreshed=await response.json();
+      const normalized={...session,...refreshed,expires_at:refreshed.expires_at||Math.floor(Date.now()/1000)+(Number(refreshed.expires_in)||3600)};
+      localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(normalized));
+      return normalized.access_token||session.access_token;
+    }catch(error){return session.access_token;}
+    finally{operationsAuthRefreshPromise=null;}
+  })();
+  return operationsAuthRefreshPromise;
+}
+async function sbHeaders(extra={}){
+  const token=await operationsAccessToken();
+  return{'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation',...extra};
+}
 async function sbGet(q){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:{...H,'Accept':'application/json'}});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbGetAll(q,pageSize=1000){const rows=[];for(let from=0;from<200000;from+=pageSize){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:{...H,'Accept':'application/json','Range-Unit':'items','Range':`${from}-${from+pageSize-1}`}});if(!r.ok)throw new Error(await r.text());const page=await r.json();rows.push(...page);if(page.length<pageSize)return rows;}throw new Error('The data set is larger than the supported reporting range. Please narrow the dates.');}
 async function sbPatch(t,id,d){const r=await sbFetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
 async function sbPost(t,d){const r=await sbFetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
+async function sbGet(q){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json'})});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbGetAll(q,pageSize=1000){const rows=[];for(let from=0;from<200000;from+=pageSize){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json','Range-Unit':'items','Range':`${from}-${from+pageSize-1}`})});if(!r.ok)throw new Error(await r.text());const page=await r.json();rows.push(...page);if(page.length<pageSize)return rows;}throw new Error('The data set is larger than the supported reporting range. Please narrow the dates.');}
+async function sbPatch(t,id,d){const r=await sbFetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:await sbHeaders(),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
+async function sbPost(t,d){const r=await sbFetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:await sbHeaders(),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
 
 // ── Loading / Toast ────────────────────────────────────────────────────────
 let lEl=null;
@@ -634,8 +669,35 @@ function reportingComplianceHtml(record){
 }
 
 // ── Load ───────────────────────────────────────────────────────────────────
+let operationsStartupWarnings=[];
+function operationsReadableError(error){
+  const raw=String(error?.message||error||'Unknown error');
+  try{const parsed=JSON.parse(raw);return parsed.message||parsed.details||raw;}catch(parseError){return raw;}
+}
+async function operationsStartupGet(label,request,{required=false}={}){
+  try{return await request();}
+  catch(error){
+    const message=operationsReadableError(error);
+    console.error(`Operations startup source failed: ${label}`,error);
+    if(required)throw new Error(`${label}: ${message}`);
+    operationsStartupWarnings.push(`${label}: ${message}`);
+    return [];
+  }
+}
+function operationsLoadNotice(message,type='warning'){
+  document.getElementById('operations-load-notice')?.remove();
+  if(!message)return;
+  const notice=document.createElement('div');
+  notice.id='operations-load-notice';
+  notice.style.cssText=`margin:10px 20px 0;padding:11px 13px;border-radius:7px;border:1px solid ${type==='error'?'#ef9a9a':'#f6c26b'};background:${type==='error'?'#fce8e6':'#fff8e8'};color:${type==='error'?'#b3261e':'#8a4b08'};font-size:12px;line-height:1.45;`;
+  notice.innerHTML=`${esc(message)}${type==='error'?'<br><button type="button" onclick="loadData()" style="margin-top:7px;padding:5px 12px;border:0;border-radius:5px;background:var(--blue);color:#fff;font:600 11px Inter,sans-serif;cursor:pointer;">Retry</button>':''}`;
+  const home=document.getElementById('home-page');
+  if(home)home.prepend(notice);else document.body.prepend(notice);
+}
 async function loadData(){
   showLoad(true);
+  operationsStartupWarnings=[];
+  operationsLoadNotice('');
   try{
     const [co,cl,br,st,sec,recs,ops]=await Promise.all([
       sbGet('GI_company?select=id,name&active=eq.true&order=name'),
@@ -645,6 +707,13 @@ async function loadData(){
       sbGet('Sector?select=id,Name,companyid&order=Name'),
       sbGet('InsightsTracking?select=*&under_review_date=not.is.null&order=under_review_date.desc'),
       sbGet('Contacts_Operations?select=id,firstname,lastname,company,jobtitle&order=lastname'),
+      operationsStartupGet('Companies',()=>sbGet('GI_company?select=id,name&active=eq.true&order=name')),
+      operationsStartupGet('Clients',()=>sbGet('GI_clients?select=id,client&active=eq.true&order=client')),
+      operationsStartupGet('Brands',()=>sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand')),
+      operationsStartupGet('Stores',()=>sbGet('GI_stores?select=id,store&visible=eq.true&order=store')),
+      operationsStartupGet('Sectors',()=>sbGet('Sector?select=id,Name,companyid&order=Name')),
+      operationsStartupGet('Insights Tracking records',()=>sbGet('InsightsTracking?select=*&under_review_date=not.is.null&order=under_review_date.desc'),{required:true}),
+      operationsStartupGet('Operations contacts',()=>sbGet('Contacts_Operations?select=id,firstname,lastname,company,jobtitle&order=lastname')),
     ]);
     allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRec=recs||[]; selMap={};
     await applyReportingCompliance(allRec.filter(record=>!record.validated_date),{autoConfirm:true});
@@ -665,6 +734,12 @@ async function loadData(){
       applyFilter();
     }
   }catch(e){toast('Load error: '+e.message,'error');}
+    if(operationsStartupWarnings.length)operationsLoadNotice(`Some reference lists could not be refreshed. Core reporting records remain available. ${operationsStartupWarnings.join(' | ')}`);
+  }catch(e){
+    const message='Load failed — '+operationsReadableError(e);
+    operationsLoadNotice(message,'error');
+    toast(message,'error');
+  }
   finally{showLoad(false);}
 }
 
