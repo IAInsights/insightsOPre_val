@@ -26,7 +26,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .header{background:var(--blue);color:#fff;height:52px;display:flex;align-items:center;padding:0 24px;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-shrink:0;}
 .header h1{font-size:16px;font-weight:700;white-space:nowrap;}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.app-release{position:relative;flex-shrink:0}.app-release summary{list-style:none;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,.38);border-radius:12px;background:rgba(255,255,255,.13);color:#fff;font-size:9.5px;font-weight:700;white-space:nowrap;user-select:none}.app-release summary::-webkit-details-marker{display:none}.app-release[open] summary{background:#fff;color:var(--blue)}.release-panel{position:absolute;z-index:10050;top:32px;left:0;width:330px;padding:14px 15px;background:#fff;color:var(--g700);border:1px solid var(--g200);border-radius:9px;box-shadow:0 12px 30px rgba(15,23,42,.22)}.release-panel:before{content:"";position:absolute;top:-6px;left:20px;width:10px;height:10px;background:#fff;border-left:1px solid var(--g200);border-top:1px solid var(--g200);transform:rotate(45deg)}.release-heading{font-size:13px;font-weight:800;color:var(--g900)}.release-date{margin-top:2px;font-size:10px;color:var(--g400)}.release-list{margin:11px 0 0;padding-left:17px;font-size:11px;line-height:1.45}.release-list li+li{margin-top:6px}.release-list strong{color:var(--blue)}
+.app-release{position:relative;flex-shrink:0}.app-release[open]{z-index:20000}.app-release summary{list-style:none;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,.38);border-radius:12px;background:rgba(255,255,255,.13);color:#fff;font-size:9.5px;font-weight:700;white-space:nowrap;user-select:none}.app-release summary::-webkit-details-marker{display:none}.app-release[open] summary{background:#fff;color:var(--blue)}.release-panel{position:absolute;z-index:20001;top:32px;left:0;width:350px;max-height:min(70vh,430px);overflow-y:auto;padding:14px 15px;background:#fff;color:var(--g700);border:1px solid var(--g200);border-radius:9px;box-shadow:0 12px 30px rgba(15,23,42,.22)}.release-panel:before{content:"";position:absolute;top:-6px;left:20px;width:10px;height:10px;background:#fff;border-left:1px solid var(--g200);border-top:1px solid var(--g200);transform:rotate(45deg)}.header-right .release-panel:before{left:auto;right:20px}.release-heading{font-size:13px;font-weight:800;color:var(--g900)}.release-date{margin-top:4px;font-size:10.5px;font-weight:700;color:var(--blue)}.release-list{display:block!important;visibility:visible!important;margin:11px 0 0!important;padding:0 0 0 19px!important;color:var(--g700)!important;font-size:11px;line-height:1.5;list-style:disc outside!important}.release-list li{display:list-item!important;visibility:visible!important;color:var(--g700)!important}.release-list li+li{margin-top:6px}.release-list strong{color:var(--blue)}
+#rc_subline_text{display:none!important}
 .company-filter{padding:5px 26px 5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='white'/%3E%3C/svg%3E") no-repeat right 9px center;appearance:none;font-family:inherit;font-size:12px;font-weight:500;color:#fff;cursor:pointer;outline:none;min-width:130px;}
 .company-filter option{color:var(--g900);background:#fff;}
 .btn-refresh{display:flex;align-items:center;gap:5px;padding:6px 14px;border:1.5px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);font-family:inherit;font-size:12px;font-weight:500;color:#fff;cursor:pointer;}
@@ -52,8 +53,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .stat-item{display:flex;align-items:center;gap:5px;color:var(--g600);}
 .stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .stat-num{font-weight:700;color:var(--g900);}
-.main-filter-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);padding:9px 20px;flex-shrink:0;}
-.main-filter-title{font-size:12px;font-weight:700;color:var(--g600);margin-right:2px;}
+.main-filter-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--g200);padding:9px 20px;flex-shrink:0;}
+.main-filter-title{display:none;}
 .main-filter-reset{height:30px;padding:0 12px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;color:var(--g600);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;}
 .main-filter-reset:hover{border-color:var(--blue);color:var(--blue);}
 
@@ -171,7 +172,21 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .toast.error{background:var(--red);}
 
 /* Searchable dropdowns for Reporting Check */
-.rc-filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.rc-toolbar{background:#fff;border-bottom:1px solid var(--g200);padding:8px 10px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap;position:relative;z-index:20;}
+.rc-toolbar-title{display:none;}
+.rc-toolbar-label{font-size:11px;color:var(--g600);font-weight:600;white-space:nowrap;}
+.rc-toolbar-control{height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;font-family:inherit;font-size:11.5px;color:var(--g600);outline:none;min-width:0;}
+.rc-toolbar input[type="date"]{width:128px;min-width:128px;flex:0 0 128px;}
+.rc-subline{margin-left:auto!important;font-size:9.5px!important;color:var(--g400)!important;}
+.rc-sync-pill{display:inline-flex;align-items:center;padding:2px 6px;border-radius:12px;background:var(--green-light);color:var(--green);font-size:9.5px;font-weight:700;}
+.rc-filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;}
+.rc-sap-picker{position:relative;flex:0 1 260px;min-width:190px;}
+.rc-sap-picker .rc-ms-btn{width:100%;max-width:none;justify-content:space-between;}
+.rc-sap-picker .rc-ms-panel{width:390px;}
+.rc-sap-primary{font-weight:700;color:var(--g800);}
+.rc-sap-secondary{display:block;font-size:10.5px;color:var(--g500);margin-top:2px;}
+.rc-sap-active{background:#edf8f0;}
+@media(max-width:1250px){.rc-toolbar{flex-wrap:wrap}.rc-filter-bar{flex-wrap:wrap}.rc-subline{margin-left:0!important;width:100%}}
 .rc-ms{position:relative;flex-shrink:0;}
 .rc-ms-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;color:var(--g600);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;max-width:170px;}
 .rc-ms-btn:hover{border-color:var(--blue);color:var(--blue);}
@@ -209,7 +224,27 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .rc-camp-btn.excluded{background:var(--g100);border-color:var(--g200);color:var(--g400);text-decoration:line-through;}
 
 /* ── Home dashboard ── */
-.home-page{display:flex;flex:1;min-height:0;overflow-y:auto;padding:10px 16px 14px;flex-direction:column;gap:9px;}
+.home-page{position:relative;display:flex;flex:1;min-height:0;overflow-y:auto;padding:10px 16px 14px;flex-direction:column;gap:9px;}
+.home-travel-loader{position:absolute;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.62);backdrop-filter:blur(2px);color:#fff;opacity:1;transition:opacity .28s ease;}
+.home-travel-loader.leaving{opacity:0;pointer-events:none;}
+.home-travel-loader[hidden]{display:none;}
+.home-travel-loader-inner{text-align:center;transform:translateY(-8px);}
+.home-travel-orbit{position:relative;width:142px;height:142px;margin:0 auto 9px;border:1px solid rgba(255,255,255,.48);border-radius:50%;display:grid;place-items:center;}
+.home-travel-orbit::before{content:'';position:absolute;inset:17px;border:1px solid rgba(255,255,255,.18);border-radius:50%;}
+.home-travel-logo-disc{width:82px;height:82px;border-radius:50%;background:rgba(255,255,255,.97);display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.24);}
+.home-travel-logo{position:relative;width:54px;height:54px;}
+.home-travel-logo-main{position:absolute;left:0;bottom:0;width:44px;height:44px;border-radius:50%;background:#d00062;clip-path:polygon(0 0,52% 0,52% 48%,100% 48%,100% 100%,0 100%);}
+.home-travel-logo-piece{position:absolute;right:0;top:0;width:25px;height:25px;border-radius:0 100% 0 0;background:#d00062;}
+.home-travel-plane-track{position:absolute;inset:0;animation:homePlaneOrbit 1.9s linear infinite;}
+.home-travel-plane{position:absolute;left:50%;top:-13px;width:28px;height:28px;transform:translateX(-50%) rotate(45deg);display:grid;place-items:center;border-radius:50%;background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);font-size:16px;line-height:1;}
+.home-travel-title{font-size:12.5px;font-weight:700;}
+.home-travel-copy{margin-top:4px;font-size:10.5px;color:rgba(255,255,255,.78);}
+.home-travel-dots{display:inline-flex;gap:3px;margin-left:3px;vertical-align:middle;}
+.home-travel-dots i{display:block;width:3px;height:3px;border-radius:50%;background:currentColor;animation:homeTravelDot 1.1s ease-in-out infinite;}
+.home-travel-dots i:nth-child(2){animation-delay:.16s}.home-travel-dots i:nth-child(3){animation-delay:.32s}
+@keyframes homePlaneOrbit{to{transform:rotate(360deg)}}
+@keyframes homeTravelDot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.home-travel-plane-track,.home-travel-dots i{animation:none}.home-travel-loader{transition:none}}
 .home-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--g200);border-radius:8px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .home-top h2{font-size:15px;margin-right:auto;}
 .home-date-label{font-size:12px;font-weight:600;color:var(--g600);}
@@ -233,19 +268,21 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .home-bar span{display:block;height:100%;border-radius:10px;}
 .home-compliance-pct{font-family:monospace;font-weight:800;text-align:right;}
 .home-bottom{display:block;}
-.home-pending-list{display:flex;flex-direction:column;max-height:230px;overflow-y:auto;}
-.home-pending-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 12px;border-bottom:1px solid var(--g200);border-left:3px solid transparent;align-items:center;background:#fff;transition:background .15s,border-color .15s;}
+.home-pending-list{display:flex;flex-direction:column;max-height:245px;overflow-y:auto;}
+.home-pending-row{display:grid;grid-template-columns:minmax(250px,1.7fr) minmax(160px,.8fr) 155px 160px;gap:10px;padding:6px 10px;border-bottom:1px solid var(--g200);border-left:3px solid transparent;align-items:center;background:#fff;transition:background .15s,border-color .15s;}
 .home-pending-row:hover{background:var(--g50);border-left-color:var(--blue);}
 .home-pending-row:last-child{border-bottom:0;}
-.home-pending-title{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.home-pending-meta{font-size:10.5px;color:var(--g500);margin-top:3px;}
+.home-pending-title{font-size:11.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-pending-meta{font-size:9.5px;color:var(--g500);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .home-pending-meta b{font-weight:700;color:var(--g600);}
 .home-pending-meta .sep{color:var(--g300);padding:0 3px;}
-.home-pending-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;}
-.home-sector-badge,.home-brand-badge{display:inline-flex;align-items:center;border-radius:20px;padding:3px 8px;font-size:11px;line-height:1.2;}
+.home-pending-tags{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:0;}
+.home-sector-badge,.home-brand-badge{display:inline-flex;align-items:center;border-radius:12px;padding:2px 6px;font-size:9.5px;line-height:1.15;}
 .home-sector-badge{border:1px solid #b8d0ff;background:var(--blue-light);color:var(--blue);font-weight:800;}
 .home-brand-badge{border:1px solid var(--g200);background:var(--g100);color:var(--g700);font-weight:700;}
 .home-pending-date{font-size:10.5px;color:var(--amber);font-weight:600;white-space:nowrap;}
+.home-campaign-compliance{display:grid;grid-template-columns:105px 42px;gap:7px;align-items:center;min-width:150px;}
+.home-campaign-range{font-size:9.5px;color:var(--g500);margin-top:0;white-space:nowrap;}
 .home-pending-tools{display:flex;align-items:center;gap:8px;}
 .home-pending-count{font-family:monospace;font-size:11px;font-weight:800;color:var(--blue);background:var(--blue-light);padding:4px 8px;border-radius:20px;}
 .sent-date-callout{margin-top:8px;padding:7px 9px;border-radius:7px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:600;line-height:1.35;text-align:center;}
@@ -333,8 +370,9 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   .home-kpis{grid-template-columns:1fr 1fr;}
   .home-compliance-row{grid-template-columns:minmax(80px,1fr) 80px 42px;padding:9px 10px;}
 }
-.oc-shell{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--g50)}.oc-head{padding:11px 20px;background:#fff;border-bottom:1px solid var(--g200);display:flex;align-items:center;gap:8px;flex-wrap:wrap}.oc-head-copy{margin-right:auto}.oc-title{font-size:15px;font-weight:700}.oc-sub{font-size:11.5px;color:var(--g500);margin-top:2px}.oc-filter{height:30px;min-width:120px;max-width:160px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;color:var(--g600);font-family:inherit;font-size:11.5px}.oc-body{min-height:0;flex:1;display:grid;grid-template-columns:minmax(650px,1fr) 325px;gap:10px;padding:12px 20px}.oc-list,.oc-detail{min-height:0;overflow:hidden;border:1px solid var(--g200);border-radius:8px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.oc-list{overflow:auto}.oc-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}.oc-table th{position:sticky;top:0;z-index:2;padding:8px;background:var(--g50);border-bottom:2px solid var(--g200);color:var(--g600);text-align:left;text-transform:uppercase;letter-spacing:.04em;font-size:9.5px}.oc-table td{padding:9px 8px;border-bottom:1px solid var(--g100);vertical-align:middle}.oc-row{cursor:pointer}.oc-row:hover,.oc-row.selected{background:#f8fbff}.oc-row.selected{box-shadow:inset 3px 0 0 var(--blue)}.oc-alert{display:inline-flex;padding:3px 7px;border-radius:20px;background:var(--amber-light);color:var(--amber);font-size:10px;font-weight:700}.oc-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.oc-meta{font-size:10px;color:var(--g500);margin-top:3px}.oc-mission{padding:0;margin-top:4px;border:0;background:none;color:var(--blue);font:600 10px/1.3 monospace;text-decoration:underline;cursor:pointer}.oc-sap{font:700 10px/1.3 monospace;color:var(--blue)}.oc-state{font-size:10.5px;font-weight:700}.oc-state.ok{color:var(--green)}.oc-state.missing{color:var(--red)}.oc-pbi{display:inline-flex;padding:4px 7px;border-radius:5px;background:var(--purple-light);color:var(--purple);font-size:10px;font-weight:700;text-decoration:none}.oc-detail{display:flex;flex-direction:column}.oc-detail-head{padding:13px 15px;border-bottom:1px solid var(--g200)}.oc-eyebrow{font-size:9.5px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.05em}.oc-detail-title{font-size:15px;font-weight:700;margin-top:6px}.oc-detail-sub{font-size:10.5px;color:var(--g500);margin-top:4px}.oc-range{margin-top:9px;padding:8px 10px;border-radius:7px;background:var(--blue-light);color:var(--blue-dark);font-size:11px}.oc-range strong{display:block;margin-bottom:3px;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em}.oc-detail-body{flex:1;overflow:auto;padding:12px 15px}.oc-section+.oc-section{margin-top:13px;padding-top:13px;border-top:1px solid var(--g100)}.oc-section-title{font-size:9.5px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}.oc-check{display:grid;grid-template-columns:23px 1fr auto;align-items:center;gap:8px;min-height:48px}.oc-check+.oc-check{border-top:1px solid var(--g100)}.oc-check-icon{width:22px;height:22px;display:grid;place-items:center;border-radius:5px;font-size:14px}.oc-check-icon.ok{background:var(--green-light);color:var(--green)}.oc-check-icon.missing{background:var(--red-light);color:var(--red)}.oc-check-label{font-size:11px;font-weight:700}.oc-check-help{font-size:9.5px;color:var(--g500);margin-top:2px}.oc-detail-foot{padding:10px 15px;background:var(--g50);border-top:1px solid var(--g200);font-size:10.5px;color:var(--amber)}.oc-empty{padding:50px;text-align:center;color:var(--g500)}
-#rc_kpis{gap:0!important;align-items:stretch}.rc-kpi{min-width:92px;padding:4px 13px;border:0;border-right:1px solid var(--g200);border-radius:0;box-shadow:none!important;background:#fff!important}.rc-kpi:first-child{padding-left:0}.rc-kpi:last-child{border-right:0}.rc-kpi:hover{transform:none;border-color:var(--g200);background:var(--g50)!important}.rc-kpi.active{box-shadow:inset 0 -2px 0 var(--kpi-color)!important}.rc-kpi span:first-child{font-size:16px!important}.rc-kpi span:last-child{font-size:9.5px!important}#rc_area{border:0!important;border-radius:0!important;box-shadow:none!important}#rc_area tbody tr:nth-child(even){background:var(--g50)}#rc_area tbody tr:hover{background:var(--blue-light)!important}
+.oc-shell{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--g50)}.oc-head{padding:11px 20px;background:#fff;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.oc-head-copy{display:none}.oc-title{font-size:15px;font-weight:700}.oc-sub{font-size:11.5px;color:var(--g500);margin-top:2px}.oc-filter{height:30px;min-width:120px;max-width:160px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;color:var(--g600);font-family:inherit;font-size:11.5px}.oc-body{min-height:0;flex:1;display:grid;grid-template-columns:minmax(650px,1fr) 325px;gap:10px;padding:12px 20px}.oc-list,.oc-detail{min-height:0;overflow:hidden;border:1px solid var(--g200);border-radius:8px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.oc-list{overflow:auto}.oc-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}.oc-table th{position:sticky;top:0;z-index:2;padding:8px;background:var(--g50);border-bottom:2px solid var(--g200);color:var(--g600);text-align:left;text-transform:uppercase;letter-spacing:.04em;font-size:9.5px}.oc-table td{padding:9px 8px;border-bottom:1px solid var(--g100);vertical-align:middle}.oc-row{cursor:pointer}.oc-row:hover,.oc-row.selected{background:#f8fbff}.oc-row.selected{box-shadow:inset 3px 0 0 var(--blue)}.oc-alert{display:inline-flex;padding:3px 7px;border-radius:20px;background:var(--amber-light);color:var(--amber);font-size:10px;font-weight:700}.oc-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.oc-meta{font-size:10px;color:var(--g500);margin-top:3px}.oc-mission{padding:0;margin-top:4px;border:0;background:none;color:var(--blue);font:600 10px/1.3 monospace;text-decoration:underline;cursor:pointer}.oc-sap{font:700 10px/1.3 monospace;color:var(--blue)}.oc-state{font-size:10.5px;font-weight:700}.oc-state.ok{color:var(--green)}.oc-state.missing{color:var(--red)}.oc-pbi{display:inline-flex;padding:4px 7px;border-radius:5px;background:var(--purple-light);color:var(--purple);font-size:10px;font-weight:700;text-decoration:none}.oc-detail{display:flex;flex-direction:column}.oc-detail-head{padding:13px 15px;border-bottom:1px solid var(--g200)}.oc-eyebrow{font-size:9.5px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.05em}.oc-detail-title{font-size:15px;font-weight:700;margin-top:6px}.oc-detail-sub{font-size:10.5px;color:var(--g500);margin-top:4px}.oc-range{margin-top:9px;padding:8px 10px;border-radius:7px;background:var(--blue-light);color:var(--blue-dark);font-size:11px}.oc-range strong{display:block;margin-bottom:3px;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em}.oc-detail-body{flex:1;overflow:auto;padding:12px 15px}.oc-section+.oc-section{margin-top:13px;padding-top:13px;border-top:1px solid var(--g100)}.oc-section-title{font-size:9.5px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}.oc-check{display:grid;grid-template-columns:23px 1fr auto;align-items:center;gap:8px;min-height:48px}.oc-check+.oc-check{border-top:1px solid var(--g100)}.oc-check-icon{width:22px;height:22px;display:grid;place-items:center;border-radius:5px;font-size:14px}.oc-check-icon.ok{background:var(--green-light);color:var(--green)}.oc-check-icon.missing{background:var(--red-light);color:var(--red)}.oc-check-label{font-size:11px;font-weight:700}.oc-check-help{font-size:9.5px;color:var(--g500);margin-top:2px}.oc-detail-foot{padding:10px 15px;background:var(--g50);border-top:1px solid var(--g200);font-size:10.5px;color:var(--amber)}.oc-empty{padding:50px;text-align:center;color:var(--g500)}
+#rc_stats{padding:10px 16px!important;background:var(--g50)!important;border-bottom:1px solid var(--g200)!important}#rc_kpis{display:grid!important;grid-template-columns:repeat(9,minmax(88px,1fr));gap:8px!important;align-items:stretch;width:100%}.rc-kpi{min-width:0;padding:8px 10px;border:1px solid var(--g200)!important;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)!important}.rc-kpi:hover{transform:translateY(-1px);border-color:var(--kpi-color)!important}.rc-kpi.active{border-color:var(--kpi-color)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--kpi-color) 18%,transparent)!important}.rc-kpi span:first-child{font-size:18px!important}.rc-kpi span:last-child{font-size:9px!important}#rc_area{border:1.5px solid var(--g300)!important;border-radius:8px!important;box-shadow:0 2px 7px rgba(0,0,0,.07)!important}#rc_area tbody td{border-bottom:1px solid var(--g100)}#rc_area tbody tr:nth-child(even){background:var(--g50)}#rc_area tbody tr:hover{background:var(--blue-light)!important}
+@media(max-width:1100px){.home-pending-row{grid-template-columns:minmax(0,1fr) 155px}.home-pending-tags,.home-campaign-range{display:none}#rc_kpis{grid-template-columns:repeat(3,minmax(100px,1fr))}}
 @media(max-width:1050px){.oc-body{grid-template-columns:1fr;overflow:auto}.oc-list{min-height:420px}.oc-detail{min-height:420px}}
 </style>
 </head>
@@ -342,49 +380,40 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 
 <div class="header">
   <h1>Reporting Compliance &amp; Validation Hub</h1>
-  <details class="app-release">
-    <summary title="Open version history">v2026.09.16.13</summary>
-    <div class="release-panel">
-      <div class="release-heading">What&rsquo;s new in v2026.09.16.13 &middot; Home Loading Fix</div>
-      <div class="release-date">Updated 16 September 2026</div>
-      <ul class="release-list">
-        <li>The Home date range is initialized immediately instead of waiting for campaign lists.</li>
-        <li>Compliance loading now completes independently from campaign-picker loading.</li>
-        <li>Operations keeps authenticated requests and persistent recovery messages.</li>
-      </ul>
-    </div>
-  </details>
   <button class="tab-btn active" id="hdr-tab-home" onclick="setView('home')">Home</button>
   <button class="tab-btn"        id="hdr-tab-rc"      onclick="setView('rc')">Reporting Check</button>
   <button class="tab-btn"        id="hdr-tab-pending" onclick="setView('pending')">Reports Validation</button>
   <button class="tab-btn"        id="hdr-tab-closing" onclick="setView('closing')">Closing Soon</button>
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
-    <button class="btn-refresh" onclick="loadData()">
-      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-      <span>Refresh</span>
-    </button>
+    <details class="app-release">
+      <summary title="Open version history">V2026.09.17.6</summary>
+      <div class="release-panel" style="left:auto;right:0;">
+        <div class="release-heading">New version V2026.09.17.6</div>
+        <div class="release-date">What&rsquo;s new:</div>
+        <ul class="release-list">
+          <li>Home compliance is calculated once for active campaigns and displayed first.</li>
+          <li>The larger pending-workflow compliance calculation now continues in the background.</li>
+          <li>Completed Home results are cached when switching pages and refreshed after two minutes.</li>
+        </ul>
+      </div>
+    </details>
   </div>
 </div>
 
 <div class="page">
   <div id="home-page" class="home-page">
-    <div class="home-top">
-      <h2>Reporting overview</h2>
-      <span class="home-date-label">From</span>
-      <input type="date" id="home_from" class="home-date" onchange="home_dateChanged()">
-      <span class="home-date-label">To</span>
-      <input type="date" id="home_to" class="home-date" onchange="home_dateChanged()">
-      <span id="home_status" class="home-status">Loading compliance…</span>
+    <div id="home_travel_loader" class="home-travel-loader" role="status" aria-live="polite" aria-label="Loading active campaigns and compliance">
+      <div class="home-travel-loader-inner">
+        <div class="home-travel-orbit" aria-hidden="true">
+          <div class="home-travel-logo-disc"><div class="home-travel-logo"><span class="home-travel-logo-main"></span><span class="home-travel-logo-piece"></span></div></div>
+          <div class="home-travel-plane-track"><span class="home-travel-plane">✈</span></div>
+        </div>
+        <div class="home-travel-title">Loading campaigns and compliance<span class="home-travel-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <div class="home-travel-copy">Preparing the Operations overview</div>
+      </div>
     </div>
     <div id="home_kpis" class="home-kpis"></div>
-    <section class="home-panel home-quick-panel">
-      <div class="home-panel-head"><h3>Open a workspace</h3><span>Quick access</span></div>
-      <div class="home-links">
-        <button type="button" class="home-link-card quick-pending" onclick="setView('pending')"><strong>Reports Validation</strong><span>Review reports waiting for approval.</span></button>
-        <button type="button" class="home-link-card quick-reporting" onclick="setView('rc')"><strong>Reporting Check</strong><span>Open compliance and detailed status.</span></button>
-      </div>
-    </section>
     <div class="home-grid">
       <section class="home-panel">
         <div class="home-panel-head"><h3>Compliance by Agency</h3><span>Select an agency</span></div>
@@ -397,7 +426,7 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
     </div>
     <div class="home-bottom">
       <section class="home-panel">
-        <div class="home-panel-head"><h3>Reports to validate</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 total</span><button type="button" class="main-filter-reset" onclick="setView('pending')">Open page</button></div></div>
+        <div class="home-panel-head"><h3>Active Campaigns &amp; Compliance</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 active</span></div></div>
         <div id="home_pending" class="home-pending-list"></div>
       </section>
     </div>
@@ -415,16 +444,16 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 
   <!-- Reporting Check page -->
   <div id="rc-page" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
-    <div style="background:#fff;border-bottom:1px solid var(--g200);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
-      <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">From</span>
-      <input type="date" id="rc_from" min="2026-01-01" onchange="rc_dateChanged()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
-      <span style="font-size:12px;color:var(--g600);font-weight:500;white-space:nowrap;flex-shrink:0;">To</span>
-      <input type="date" id="rc_to" min="2026-01-01" onchange="rc_dateChanged()" style="height:30px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);font-family:inherit;font-size:12px;outline:none;">
-
-      <input type="search" id="rc_record_search" oninput="rc_loadTrackingPickers()" placeholder="Search campaign / SAP…" title="Search the campaign and SAP lists" style="height:30px;width:175px;padding:0 9px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;font-family:inherit;font-size:11.5px;color:var(--g600);outline:none;">
-      <select id="rc_record_campaign" onchange="rc_pickTrackingRecord(this.value)" title="Select a campaign and load its complete date range" style="height:30px;max-width:220px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;font-family:inherit;font-size:11.5px;color:var(--g600);outline:none;"><option value="">Select campaign</option></select>
-      <select id="rc_record_sap" onchange="rc_pickTrackingRecord(this.value)" title="Select a SAP code and load its complete date range" style="height:30px;max-width:165px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;font-family:inherit;font-size:11.5px;color:var(--g600);outline:none;"><option value="">Select SAP code</option></select>
-      <select id="rc_record_report_type" onchange="rc_defaultReportTypePending=false;rc_loadTrackingPickers()" title="Filter the campaign and SAP lists by report type" style="height:30px;max-width:175px;padding:0 8px;border:1.5px solid var(--g300);border-radius:var(--r);background:#fff;font-family:inherit;font-size:11.5px;color:var(--g600);outline:none;"><option value="">All report types</option></select>
+    <div class="rc-toolbar">
+      <span class="rc-toolbar-label">From</span>
+      <input class="rc-toolbar-control" type="date" id="rc_from" min="2026-01-01" onchange="rc_dateChanged()">
+      <span class="rc-toolbar-label">To</span>
+      <input class="rc-toolbar-control" type="date" id="rc_to" min="2026-01-01" onchange="rc_dateChanged()">
+      <select class="rc-toolbar-control" id="rc_record_report_type" onchange="rc_reportTypeChanged()" title="Choose the report type"><option value="">All report types</option></select>
+      <div class="rc-sap-picker rc-ms" id="rc_sap_picker">
+        <button type="button" class="rc-ms-btn" id="rc_sap_btn" onclick="rc_toggleSapPicker(event)" aria-expanded="false" title="Search and select one or more SAP codes or campaigns"><span id="rc_sap_label">SAP / Campaign: All</span><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg></button>
+        <div class="rc-ms-panel" id="rc_sap_panel" onclick="event.stopPropagation()"><input class="rc-ms-search" id="rc_sap_search" type="search" placeholder="Search SAP code or campaign name…" oninput="rc_renderSapOptions(this.value)"><div class="rc-ms-actions"><button type="button" onclick="rc_clearSapSelection()">Show all</button><button type="button" onclick="rc_closeSapPicker()">Done</button></div><div class="rc-ms-list" id="rc_sap_options"></div></div>
+      </div>
 
       <div id="rc_filter_bar" class="rc-filter-bar"></div>
 
@@ -436,7 +465,7 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H6a1 1 0 0 0-1 1v2H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h3v2a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM8 6.5l1.5 2L11 6.5h1.2L10.1 9.5l2.1 3H11l-1.5-2.1L8 12.5H6.8l2.1-3L6.8 6.5H8z"/></svg>
         Export
       </button>
-      <div id="rc_subline" style="margin-left:auto;font-size:12px;color:var(--g500);display:flex;align-items:center;gap:8px;">
+      <div id="rc_subline" class="rc-subline" style="margin-left:0;font-size:11px;color:var(--g500);display:flex;align-items:center;gap:6px;white-space:nowrap;">
         <span id="rc_subline_text"></span>
         <span id="rc_sync_badge"></span>
       </div>
@@ -460,7 +489,6 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <div id="closing-page" style="display:none;flex:1;min-height:0;">
     <div class="oc-shell">
       <div class="oc-head">
-        <div class="oc-head-copy"><div class="oc-title">Closing Soon</div><div class="oc-sub" id="oc-subline">Animations ending within 5 days · read-only final status</div></div>
         <select class="oc-filter" id="oc-filter-sap" onchange="oc_render()"><option value="">All SAP codes</option></select>
         <select class="oc-filter" id="oc-filter-client" onchange="oc_render()"><option value="">All clients</option></select>
         <select class="oc-filter" id="oc-filter-agency" onchange="oc_render()"><option value="">All agencies</option></select>
@@ -510,7 +538,7 @@ const fd  = d=>{if(!d)return'';const p=(d+'').split('T')[0].split('-');return`${
 const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // ── State ──────────────────────────────────────────────────────────────────
-let allCo=[], allCl=[], allBr=[], allSt=[], allSectors=[], allOps=[];
+let allCo=[], allCl=[], allBr=[], allSt=[], allSectors=[], allOps=[], allRT=[];
 let allRec=[], view='home', selMap={}, currentRid=null;
 const mainWorkflowSelected={pending:null,all:null};
 let main_filterOptions={}, main_filterState={}, main_filterMode={};
@@ -574,12 +602,16 @@ const shortBrands  = r=>{const v=resolveIds(r.brand_ids,allBr,'brand'); return v
 const shortStores  = r=>{const v=resolveIds(r.store_ids,allSt,'store'); return v.length?v:((r.store||'').split(',').map(s=>s.trim()).filter(Boolean));};
 const shortClient  = r=>{const v=resolveId(r.client_fk,allCl,'client'); return v||r.client||'';};
 const shortSectors = r=>resolveIds(r.sector_ids,allSectors,'Name').filter(Boolean);
+const shortReportTypes=r=>resolveIds(Array.isArray(r?.report_type_ids)?r.report_type_ids:String(r?.report_type_ids||'').replace(/[{}]/g,'').split(',').filter(Boolean),allRT,'type').filter(Boolean);
 
-async function applyReportingCompliance(records,{autoConfirm=false}={}){
+async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmIds=null,asOfDate=''}={}){
   const targets=records.filter(record=>record.startdate&&record.enddate);
   if(!targets.length)return;
   const from=targets.map(record=>record.startdate).sort()[0];
-  const to=targets.map(record=>record.enddate).sort().reverse()[0];
+  const latestEnd=targets.map(record=>record.enddate).sort().reverse()[0];
+  const today=homeToday();
+  const cutoff=asOfDate||today;
+  const to=cutoff<latestEnd?cutoff:latestEnd;
   try{
     const [scheduleRows,questionnaireRows]=await Promise.all([
       sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,brand,client,role,campaign_name,campaign_sapcode,timeslot_status&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc`),
@@ -635,7 +667,8 @@ async function applyReportingCompliance(records,{autoConfirm=false}={}){
       record.reporting_compliance_absent=absent;
       record.reporting_compliance_backup=backup;
       record.reporting_compliance_pct=eligible.length?Math.round(reported/eligible.length*100):0;
-      if(autoConfirm&&record.reporting_compliance_pct>=75&&!record.reporting_compliant){
+      const mayAutoConfirm=!autoConfirmIds||autoConfirmIds.has(String(record.id));
+      if(autoConfirm&&mayAutoConfirm&&record.reporting_compliance_pct>=75&&!record.reporting_compliant){
         updates.push(sbPatch('InsightsTracking',record.id,{reporting_compliant:true}).then(()=>{record.reporting_compliant=true;oc_schemaReady=true;}).catch(()=>{}));
       }
     });
@@ -684,11 +717,13 @@ function operationsLoadNotice(message,type='warning'){
   if(home)home.prepend(notice);else document.body.prepend(notice);
 }
 async function loadData(){
+  if(view==='home')home_setTravelLoader(true);
   showLoad(true);
   operationsStartupWarnings=[];
   operationsLoadNotice('');
   try{
-    const [co,cl,br,st,sec,recs,ops]=await Promise.all([
+    const activeDate=homeToday();
+    const [co,cl,br,st,sec,recs,ops,rtypes,activeRows]=await Promise.all([
       operationsStartupGet('Companies',()=>sbGet('GI_company?select=id,name&active=eq.true&order=name')),
       operationsStartupGet('Clients',()=>sbGet('GI_clients?select=id,client&active=eq.true&order=client')),
       operationsStartupGet('Brands',()=>sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand')),
@@ -696,9 +731,28 @@ async function loadData(){
       operationsStartupGet('Sectors',()=>sbGet('Sector?select=id,Name,companyid&order=Name')),
       operationsStartupGet('Insights Tracking records',()=>sbGet('InsightsTracking?select=*&under_review_date=not.is.null&order=under_review_date.desc'),{required:true}),
       operationsStartupGet('Operations contacts',()=>sbGet('Contacts_Operations?select=id,firstname,lastname,company,jobtitle&order=lastname')),
+      operationsStartupGet('Report types',()=>sbGet('report_types?select=id,type&order=type')),
+      operationsStartupGet('Active campaigns',()=>sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${activeDate}&enddate=gte.${activeDate}&order=enddate.asc`)),
     ]);
-    allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRec=recs||[]; selMap={};
-    await applyReportingCompliance(allRec.filter(record=>!record.validated_date),{autoConfirm:true});
+    allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRT=rtypes||[]; allRec=recs||[]; selMap={};
+    const activeRecords=activeRows||[];
+    const activeHomeRecords=activeRecords.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,activeRecords));
+    const pendingRecords=allRec.filter(record=>!record.validated_date);
+    const autoConfirmIds=new Set(pendingRecords.map(record=>String(record.id)));
+    const complianceTargetsById=new Map();
+    activeHomeRecords.forEach(record=>{
+      const key=String(record.id??`${record.sapcode||''}|${record.startdate||''}|${record.enddate||''}`);
+      complianceTargetsById.set(key,{...(complianceTargetsById.get(key)||{}),...record});
+    });
+    const complianceTargets=[...complianceTargetsById.values()];
+    await applyReportingCompliance(complianceTargets,{autoConfirm:true,autoConfirmIds,asOfDate:activeDate});
+    const complianceResults=new Map(complianceTargets.map(record=>[String(record.id),record]));
+    const complianceFields=['reporting_compliance_total','reporting_compliance_reported','reporting_compliance_absent','reporting_compliance_backup','reporting_compliance_pct','reporting_compliant'];
+    [...allRec,...activeRecords].forEach(record=>{
+      const result=complianceResults.get(String(record.id));
+      if(result)complianceFields.forEach(field=>{record[field]=result[field];});
+    });
+    workflowComplianceReady=pendingRecords.every(record=>Number.isFinite(record.reporting_compliance_pct));
 
     main_filterOptions={}; main_filterState={}; main_filterMode={};
 
@@ -706,8 +760,7 @@ async function loadData(){
     mco.innerHTML='<option value="">— Select company —</option>'+allCo.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
     if(view==='home'){
-      home_render();
-      await home_initIfNeeded(rc_initialized);
+      await home_initIfNeeded(true,activeRecords,true);
     }else if(view==='rc'){
       rc_load();
     }else if(view==='closing'){
@@ -715,13 +768,17 @@ async function loadData(){
     }else{
       applyFilter();
     }
+    queueWorkflowCompliance();
     if(operationsStartupWarnings.length)operationsLoadNotice(`Some reference lists could not be refreshed. Core reporting records remain available. ${operationsStartupWarnings.join(' | ')}`);
   }catch(e){
     const message='Load failed — '+operationsReadableError(e);
     operationsLoadNotice(message,'error');
     toast(message,'error');
   }
-  finally{showLoad(false);}
+  finally{
+    showLoad(false);
+    if(view==='home'&&!home_loading&&!home_complianceLoading)home_setTravelLoader(false);
+  }
 }
 
 // ── Filter / render ────────────────────────────────────────────────────────
@@ -872,53 +929,85 @@ function main_resetFilters(silent=false){
 }
 
 let home_loading=false;
+let home_complianceLoading=false;
 let home_error='';
 let home_agencyFilter='';
-
-function home_syncDatesFromReporting(){
-  const homeFrom=document.getElementById('home_from');
-  const homeTo=document.getElementById('home_to');
-  const rcFrom=document.getElementById('rc_from');
-  const rcTo=document.getElementById('rc_to');
-  if(homeFrom&&rcFrom)homeFrom.value=rcFrom.value;
-  if(homeTo&&rcTo)homeTo.value=rcTo.value;
+let home_campaigns=[];
+let home_initialized=false;
+let home_loaderHideTimer=null;
+let home_loadedAt=0;
+const HOME_CACHE_MS=2*60*1000;
+let workflowComplianceReady=false;
+let workflowCompliancePromise=null;
+let workflowComplianceTimer=null;
+const homeToday=()=>new Date().toISOString().slice(0,10);
+async function ensureWorkflowCompliance(){
+  if(workflowComplianceReady)return;
+  if(workflowCompliancePromise)return workflowCompliancePromise;
+  const targets=allRec.filter(record=>!record.validated_date&&!Number.isFinite(record.reporting_compliance_pct));
+  if(!targets.length){workflowComplianceReady=true;return;}
+  const autoConfirmIds=new Set(targets.map(record=>String(record.id)));
+  workflowCompliancePromise=(async()=>{
+    await applyReportingCompliance(targets,{autoConfirm:true,autoConfirmIds,asOfDate:homeToday()});
+    workflowComplianceReady=targets.every(record=>Number.isFinite(record.reporting_compliance_pct));
+    if(view==='pending'||view==='all')applyFilter();
+  })().catch(error=>console.error('Background workflow compliance failed',error)).finally(()=>{workflowCompliancePromise=null;});
+  return workflowCompliancePromise;
 }
-function home_dateChanged(){
-  const homeFrom=document.getElementById('home_from').value;
-  const homeTo=document.getElementById('home_to').value;
-  document.getElementById('rc_from').value=homeFrom;
-  document.getElementById('rc_to').value=homeTo;
-  home_loading=true;
-  home_error='';
-  home_render();
-  rc_dateChanged();
+function queueWorkflowCompliance(){
+  clearTimeout(workflowComplianceTimer);
+  if(workflowComplianceReady)return;
+  workflowComplianceTimer=setTimeout(()=>{ensureWorkflowCompliance();},250);
 }
-async function home_initIfNeeded(forceReload=false){
-  let loadingTask=Promise.resolve();
-  if(!rc_initialized){
-    loadingTask=rc_initIfNeeded();
-  }else if(forceReload){
-    loadingTask=rc_load();
+function home_setTravelLoader(isLoading){
+  const loader=document.getElementById('home_travel_loader');
+  const page=document.getElementById('home-page');
+  if(!loader)return;
+  clearTimeout(home_loaderHideTimer);
+  if(isLoading){
+    loader.hidden=false;
+    loader.classList.remove('leaving');
+    page?.setAttribute('aria-busy','true');
+    return;
   }
-  home_syncDatesFromReporting();
-  home_render();
-  await loadingTask;
+  loader.classList.add('leaving');
+  page?.setAttribute('aria-busy','false');
+  home_loaderHideTimer=setTimeout(()=>{loader.hidden=true;},300);
 }
-function home_compliance(rows){
-  const excluded=rows.filter(row=>['absent','absent_backup','pending'].includes(row.status)).length;
-  const eligible=Math.max(0,rows.length-excluded);
-  const reported=rows.filter(row=>row.status==='complete').length;
+async function home_initIfNeeded(forceReload=false,prefetchedRows=null,complianceReady=false){
+  const cacheFresh=home_initialized&&home_loadedAt&&(Date.now()-home_loadedAt)<HOME_CACHE_MS;
+  if(cacheFresh&&!forceReload){home_render();return;}
+  home_setTravelLoader(true);
+  home_initialized=true;home_loading=true;home_complianceLoading=false;home_error='';home_render();
+  try{
+    const today=homeToday();
+    const rows=Array.isArray(prefetchedRows)?prefetchedRows:await sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${today}&enddate=gte.${today}&order=enddate.asc`);
+    home_campaigns=rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,rows));
+    home_loading=false;home_complianceLoading=!complianceReady;home_render();
+    if(!complianceReady)await applyReportingCompliance(home_campaigns,{asOfDate:today});
+  }catch(error){home_campaigns=[];home_error=operationsReadableError(error);}
+  finally{
+    home_loading=false;home_complianceLoading=false;
+    if(!home_error)home_loadedAt=Date.now();
+    home_render();home_setTravelLoader(false);
+  }
+}
+function home_compliance(records){
+  const eligible=records.reduce((sum,record)=>sum+(Number(record.reporting_compliance_total)||0),0);
+  const reported=records.reduce((sum,record)=>sum+(Number(record.reporting_compliance_reported)||0),0);
   return{eligible,reported,pct:eligible?Math.round(reported/eligible*100):0};
 }
 function home_complianceColor(pct){
   return pct>=75?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
 }
-function home_groupCompliance(rows,valueFor){
+function home_groupCompliance(rows,valuesFor){
   const groups=new Map();
   rows.forEach(row=>{
-    const value=String(valueFor(row)||'No value').trim()||'No value';
-    if(!groups.has(value))groups.set(value,[]);
-    groups.get(value).push(row);
+    const raw=valuesFor(row),values=(Array.isArray(raw)?raw:[raw]).map(value=>String(value||'').trim()).filter(Boolean);
+    (values.length?values:['No value']).forEach(value=>{
+      if(!groups.has(value))groups.set(value,[]);
+      groups.get(value).push(row);
+    });
   });
   return[...groups.entries()].map(([name,groupRows])=>({name,...home_compliance(groupRows)}))
     .sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
@@ -946,64 +1035,62 @@ function home_selectAgency(agency){
   home_agencyFilter=home_agencyFilter===agency?'':agency;
   home_render();
 }
-function home_agencyName(record){
-  return String(rc_agencyLabel(record?.agency)||resolveIds(record?.company_ids,allCo,'name')[0]||'No value').trim()||'No value';
+function home_agencyNames(record){
+  const names=resolveIds(record?.company_ids,allCo,'name').filter(Boolean);
+  return names.length?names:['No value'];
 }
-function home_renderPending(){
+function home_renderCampaigns(){
   const target=document.getElementById('home_pending');
   if(!target)return;
-  const allPending=allRec.filter(record=>!record.validated_date&&!record.first_report_date);
-  const pending=home_agencyFilter
-    ?allPending.filter(record=>resolveIds(record.company_ids,allCo,'name').includes(home_agencyFilter))
-    :allPending;
+  const campaigns=(home_agencyFilter?home_campaigns.filter(record=>home_agencyNames(record).includes(home_agencyFilter)):home_campaigns)
+    .slice().sort((a,b)=>String(a.enddate||'').localeCompare(String(b.enddate||''))||String(a.Title||'').localeCompare(String(b.Title||'')));
   const count=document.getElementById('home_pending_count');
-  if(count)count.textContent=home_agencyFilter?`${pending.length} of ${allPending.length}`:`${allPending.length} total`;
-  if(!pending.length){
-    target.innerHTML=`<div class="empty" style="padding:28px 16px;">No reports waiting for validation${home_agencyFilter?' for '+esc(home_agencyFilter):''}.</div>`;
+  if(count)count.textContent=home_agencyFilter?`${campaigns.length} of ${home_campaigns.length} active`:`${home_campaigns.length} active`;
+  if(!campaigns.length){
+    target.innerHTML=`<div class="empty" style="padding:28px 16px;">No active campaigns${home_agencyFilter?' for '+esc(home_agencyFilter):''}.</div>`;
     return;
   }
-  target.innerHTML=pending.map(record=>{
+  target.innerHTML=campaigns.map(record=>{
     const sectors=shortSectors(record).join(', ')||'No sector';
     const brands=shortBrands(record).join(', ')||'No brand';
-    const clientSap=[shortClient(record),record.sapcode].filter(Boolean).join(' · ');
+    const clientSap=[shortClient(record),record.sapcode,shortReportTypes(record).join(', ')].filter(Boolean).join(' · ');
+    const pct=Number.isFinite(record.reporting_compliance_pct)?record.reporting_compliance_pct:0;
+    const color=home_complianceColor(pct);
     return `<div class="home-pending-row">
       <div style="min-width:0;">
-        <div class="home-pending-title">${esc(record.Title||'Untitled report')}</div>
-        <div class="home-pending-tags">
-          <span class="home-sector-badge">Sector: ${esc(sectors)}</span>
-          <span class="home-brand-badge">Brand: ${esc(brands)}</span>
-        </div>
+        <div class="home-pending-title">${esc(record.Title||'Untitled campaign')}</div>
         ${clientSap?`<div class="home-pending-meta">${esc(clientSap)}</div>`:''}
       </div>
-      <div class="home-pending-date">Since ${esc(fd(record.under_review_date)||'—')}</div>
+      <div class="home-pending-tags"><span class="home-sector-badge">${esc(sectors)}</span><span class="home-brand-badge">${esc(brands)}</span></div>
+      <div class="home-campaign-range">${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div>
+      <div class="home-campaign-compliance"><div class="home-bar"><span style="width:${pct}%;background:${color};"></span></div><div class="home-compliance-pct" style="color:${color};">${Number.isFinite(record.reporting_compliance_pct)?pct+'%':'—'}</div></div>
     </div>`;
   }).join('');
 }
 function home_render(){
   const status=document.getElementById('home_status');
   if(status){
-    status.textContent=home_loading?'Loading compliance…':home_error?home_error:`${rc_data.length} shifts`;
+    status.textContent=home_loading?'Loading active campaigns…':home_error?home_error:home_complianceLoading?`${home_campaigns.length} active · calculating compliance…`:`${home_campaigns.length} active today`;
     status.style.color=home_error?'var(--red)':'var(--g500)';
   }
-  const overall=home_compliance(rc_data);
-  const reported=rc_data.filter(row=>row.status==='complete').length;
-  const partial=rc_data.filter(row=>row.status==='partial').length;
-  const missing=rc_data.filter(row=>row.status==='missing').length;
+  const overall=home_compliance(home_campaigns);
+  const compliant=home_campaigns.filter(record=>Number(record.reporting_compliance_pct)>=75).length;
+  const attention=home_campaigns.filter(record=>!Number.isFinite(record.reporting_compliance_pct)||Number(record.reporting_compliance_pct)<75).length;
   const kpis=document.getElementById('home_kpis');
   if(kpis)kpis.innerHTML=[
-    {value:overall.pct+'%',label:'Compliance',color:home_complianceColor(overall.pct)},
-    {value:reported,label:'Reported',color:'var(--green)'},
-    {value:partial,label:'Partial',color:'var(--amber)'},
-    {value:missing,label:'Missing',color:'var(--red)'},
+    {value:home_campaigns.length,label:'Active campaigns',color:'var(--blue)'},
+    {value:overall.pct+'%',label:'Average compliance',color:home_complianceColor(overall.pct)},
+    {value:compliant,label:'Compliant (75%+)',color:'var(--green)'},
+    {value:attention,label:'Needs attention',color:'var(--red)'},
   ].map(kpi=>`<div class="home-kpi"><div class="home-kpi-value" style="color:${kpi.color};">${kpi.value}</div><div class="home-kpi-label">${kpi.label}</div></div>`).join('');
-  const agencyGroups=home_groupCompliance(rc_data,home_agencyName);
+  const agencyGroups=home_groupCompliance(home_campaigns,home_agencyNames);
   if(home_agencyFilter&&!agencyGroups.some(group=>group.name===home_agencyFilter))home_agencyFilter='';
-  home_renderPending();
-  const sectorRows=home_agencyFilter?rc_data.filter(row=>home_agencyName(row)===home_agencyFilter):rc_data;
+  home_renderCampaigns();
+  const sectorRows=home_agencyFilter?home_campaigns.filter(record=>home_agencyNames(record).includes(home_agencyFilter)):home_campaigns;
   const sectorContext=document.getElementById('home_sector_context');
   if(sectorContext)sectorContext.textContent=home_agencyFilter||'All agencies';
   home_renderCompliance('home_country',agencyGroups,true);
-  home_renderCompliance('home_sector',home_groupCompliance(sectorRows,row=>row.sector));
+  home_renderCompliance('home_sector',home_groupCompliance(sectorRows,shortSectors));
 }
 
 function setView(v){
@@ -1018,17 +1105,17 @@ function setView(v){
   document.getElementById('closing-page').style.display=isClosing?'flex':'none';
   document.getElementById('main-filter-toolbar').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
   document.getElementById('body').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
-  document.getElementById('stats-bar').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
-  if(isHome){home_initIfNeeded();return;}
+  document.getElementById('stats-bar').style.display='none';
+  if(isHome){home_initIfNeeded(false);return;}
   if(isReporting){if(pageChanged){rc_defaultReportTypePending=true;const picker=document.getElementById('rc_record_report_type');if(picker)picker.value='';}rc_initIfNeeded(pageChanged);return;}
   if(isClosing){oc_initIfNeeded();return;}
   applyFilter();
+  if((v==='pending'||v==='all')&&!workflowComplianceReady)ensureWorkflowCompliance();
 }
 function applyFilter(){
   const baseRows=main_viewRows();
   main_populateFilters(baseRows);
   const rows=baseRows.filter(row=>main_rowMatchesFilters(row));
-  renderStats(rows);
   renderCards(rows);
 }
 function renderStats(rows){
@@ -1149,6 +1236,7 @@ function mainWorkflowDetail(record){
   const isValidated=!!record.validated_date;
   const isSent=!!(record.email_sent_date||record.first_report_date);
   const pbi=record.powerbi_url;
+  const pbiName=record.powerbi_title||'Open Power BI report';
   const missions=rcMissionIds(record).join(', ')||'—';
   const compliance=Number.isFinite(record.reporting_compliance_pct)
     ?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${Number(record.reporting_compliance_absent)||0}`
@@ -1159,7 +1247,7 @@ function mainWorkflowDetail(record){
   }else{
     action=`<div class="oc-state ok">✓ Validated by ${esc(record.validated_by||'—')}</div>${isSent?`<div style="margin-top:8px;padding:9px;border-radius:7px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;text-align:center;">Final report was sent · ${fd(record.email_sent_date||record.first_report_date)||'—'}</div>`:`<button class="btn-unvalidate" onclick="doUnvalidate(${record.id})" style="width:100%;margin-top:8px;">Undo validation</button>`}`;
   }
-  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${esc(missions)} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">Open Power BI report</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
+  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${esc(missions)} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
 }
 function renderCards(rows){
   const body=document.getElementById('body');
@@ -1170,6 +1258,10 @@ function renderCards(rows){
   }
   if(!rows.some(record=>String(record.id)===String(mainWorkflowSelected[view])))mainWorkflowSelected[view]=rows[0].id;
   const selected=rows.find(record=>String(record.id)===String(mainWorkflowSelected[view]))||rows[0];
+  if(view==='all'){
+    body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:82px"><col style="width:220px"><col style="width:95px"><col style="width:125px"><col style="width:125px"><col style="width:150px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),sent=!!(record.email_sent_date||record.first_report_date),status=sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI',missions=rcMissionIds(record).join(', ')||'—',reportTypes=shortReportTypes(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:var(--green-light);color:var(--green);">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${esc(missions)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
+    return;
+  }
   body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:82px"><col style="width:220px"><col style="width:95px"><col style="width:125px"><col style="width:95px"><col style="width:58px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),validated=!!record.validated_date,sent=!!(record.email_sent_date||record.first_report_date),status=view==='pending'?'Awaiting':sent?'Sent':'Validated',pbi=record.powerbi_url,missions=rcMissionIds(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:${validated?'var(--green-light)':'var(--amber-light)'};color:${validated?'var(--green)':'var(--amber)'};">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${esc(missions)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td>${mainWorkflowCompliance(record)}</td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Open</a>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
 }
 
@@ -1492,11 +1584,11 @@ async function saveContact(){
 
 // ── Closing Soon (read only) ────────────────────────────────────────────────
 let oc_rows=[],oc_initialized=false,oc_selectedId=null,oc_schemaReady=true;
-let rc_trackingRecords=[],rc_trackingReportTypes=[],rc_selectedTrackingId=null;
+let rc_trackingRecords=[],rc_trackingReportTypes=[],rc_selectedTrackingId=null,rc_selectedTrackingIds=new Set();
 const RC_MIN_DATE='2026-01-01';
-const ocSelect='id,Title,client,brand,sapcode,mission_id,mission_ids,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,powerbi_url,powerbi_title,reporting_compliant,kpis_ok,global_feedback_received,first_report_date,email_sent_date,cancelled_date,not_sent_date';
-const ocStatusSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,powerbi_url,powerbi_title,reporting_compliant,kpis_ok,global_feedback_received,first_report_date,email_sent_date,cancelled_date,not_sent_date';
-const ocFallbackSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,startdate,enddate,powerbi_url,powerbi_title,first_report_date,email_sent_date,cancelled_date,not_sent_date';
+const ocSelect='id,Title,client,brand,sapcode,mission_id,mission_ids,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,report_type_ids,startdate,enddate,powerbi_url,powerbi_title,reporting_compliant,kpis_ok,global_feedback_received,first_report_date,email_sent_date,cancelled_date,not_sent_date';
+const ocStatusSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,report_type_ids,startdate,enddate,powerbi_url,powerbi_title,reporting_compliant,kpis_ok,global_feedback_received,first_report_date,email_sent_date,cancelled_date,not_sent_date';
+const ocFallbackSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,report_type_ids,startdate,enddate,powerbi_url,powerbi_title,first_report_date,email_sent_date,cancelled_date,not_sent_date';
 const ocToday=()=>new Date().toISOString().split('T')[0];
 const ocPlusDays=days=>{const date=new Date();date.setDate(date.getDate()+days);return date.toISOString().split('T')[0];};
 const ocCountdownLabel=enddate=>{
@@ -1558,11 +1650,11 @@ function oc_render(){
   if(!list)return;
   if(!rows.length){list.innerHTML='<div class="oc-empty">No animations ending in the next 5 days match these filters.</div>';document.getElementById('oc-detail').innerHTML='<div class="oc-empty">No animation selected.</div>';return;}
   if(!rows.some(record=>String(record.id)===String(oc_selectedId)))oc_selectedId=rows[0].id;
-  list.innerHTML=`<table class="oc-table"><colgroup><col style="width:58px"><col style="width:184px"><col style="width:90px"><col style="width:118px"><col style="width:118px"><col style="width:74px"><col style="width:102px"><col style="width:58px"></colgroup><thead><tr><th>Alert</th><th>Animation / mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>KPIs</th><th>Global Feedback</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const selected=String(record.id)===String(oc_selectedId),pbi=ocSafeUrl(record.powerbi_url),pct=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total}`:'—',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0;return `<tr class="oc-row${selected?' selected':''}" onclick="oc_select(${record.id})"><td><span class="oc-alert">${ocCountdownLabel(record.enddate)}</span></td><td><div class="oc-name">${esc(record.Title||'Untitled animation')}</div><div class="oc-meta">${esc(ocClient(record))}</div><button class="oc-mission" onclick="event.stopPropagation();oc_openReporting(${record.id})">Mission ${esc(rcMissionIds(record).join(', ')||'—')} → Reporting Check</button></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-state ${record.reporting_compliant?'ok':'missing'}">${pct}</span><div class="oc-meta">Absent: ${absent}${backup?` · Backup: ${backup}`:''}</div></td><td><span class="oc-state ${record.kpis_ok?'ok':'missing'}">${record.kpis_ok?'✓ OK':'✕ Missing'}</span></td><td><span class="oc-state ${record.global_feedback_received?'ok':'missing'}">${record.global_feedback_received?'✓ Received':'✕ Missing'}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Open</a>`:'—'}</td></tr>`;}).join('')}</tbody></table>`;
+  list.innerHTML=`<table class="oc-table"><colgroup><col style="width:58px"><col style="width:184px"><col style="width:90px"><col style="width:118px"><col style="width:118px"><col style="width:74px"><col style="width:102px"><col style="width:104px"><col style="width:118px"></colgroup><thead><tr><th>Alert</th><th>Animation / mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>KPIs</th><th>Global Feedback</th><th>Report Type</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const selected=String(record.id)===String(oc_selectedId),pbi=ocSafeUrl(record.powerbi_url),pct=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total}`:'—',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,reportTypes=shortReportTypes(record).join(', ')||'—',pbiName=record.powerbi_title||'Open Power BI';return `<tr class="oc-row${selected?' selected':''}" onclick="oc_select(${record.id})"><td><span class="oc-alert">${ocCountdownLabel(record.enddate)}</span></td><td><div class="oc-name">${esc(record.Title||'Untitled animation')}</div><div class="oc-meta">${esc(ocClient(record))}</div><button class="oc-mission" onclick="event.stopPropagation();oc_openReporting(${record.id})">Mission ${esc(rcMissionIds(record).join(', ')||'—')} → Reporting Check</button></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-state ${record.reporting_compliant?'ok':'missing'}">${pct}</span><div class="oc-meta">Absent: ${absent}${backup?` · Backup: ${backup}`:''}</div></td><td><span class="oc-state ${record.kpis_ok?'ok':'missing'}">${record.kpis_ok?'✓ OK':'✕ Missing'}</span></td><td><span class="oc-state ${record.global_feedback_received?'ok':'missing'}">${record.global_feedback_received?'✓ Received':'✕ Missing'}</span></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table>`;
   oc_renderDetail(rows.find(record=>String(record.id)===String(oc_selectedId))||rows[0]);
 }
-function oc_renderDetail(record){const detail=document.getElementById('oc-detail');if(!detail||!record)return;const ready=!!(record.reporting_compliant&&record.kpis_ok&&record.global_feedback_received),pbi=ocSafeUrl(record.powerbi_url),absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,complianceHelp=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${absent}${backup?` · Absent with backup: ${backup}`:''}`:'Compliance unavailable';detail.innerHTML=`<div class="oc-detail-head"><div class="oc-eyebrow">Final client check · ${ocCountdownLabel(record.enddate)}</div><div class="oc-detail-title">${esc(record.Title||'Untitled animation')}</div><div class="oc-detail-sub">Mission ${esc(rcMissionIds(record).join(', ')||'—')} · SAP ${esc(record.sapcode||'—')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Final status · read only</div>${oc_readOnlyCheck(!!record.reporting_compliant,'Reporting compliance (75% minimum)',complianceHelp)}${oc_readOnlyCheck(!!record.kpis_ok,'KPIs checked by Insights','Results and data quality confirmed')}${oc_readOnlyCheck(!!record.global_feedback_received,'Global feedback','Final feedback received')}</div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">Open Power BI report</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div></div><div class="oc-detail-foot" style="color:${ready?'var(--green)':'var(--amber)'}">Operations view only · ${ready?'all final checks are complete':'updates are made in Insights Check'}</div>`;}
-async function oc_openReporting(id){const record=oc_rows.find(item=>String(item.id)===String(id));if(!record)return;rc_selectedTrackingId=String(record.id);rc_initialized=true;setView('rc');await rc_loadTrackingPickers();const campaign=document.getElementById('rc_record_campaign'),sap=document.getElementById('rc_record_sap');if(campaign)campaign.value=String(record.id);if(sap)sap.value=String(record.id);document.getElementById('rc_from').value=record.startdate||ocToday();document.getElementById('rc_to').value=record.enddate||ocToday();rc_filterOptions={};rc_filterState={};rc_filterMode={};rc_forceAllFilters=true;rc_kpiFilter='';await rc_load();rc_filterMode.campaign='custom';rc_filterState.campaign=new Set([String(record.Title||record.brand||'')].filter(Boolean));rc_filterMode.sapcode='custom';rc_filterState.sapcode=new Set([String(record.sapcode||'')].filter(Boolean));rc_populateFilters();rc_render();}
+function oc_renderDetail(record){const detail=document.getElementById('oc-detail');if(!detail||!record)return;const ready=!!(record.reporting_compliant&&record.kpis_ok&&record.global_feedback_received),pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI report',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,complianceHelp=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${absent}${backup?` · Absent with backup: ${backup}`:''}`:'Compliance unavailable';detail.innerHTML=`<div class="oc-detail-head"><div class="oc-eyebrow">Final client check · ${ocCountdownLabel(record.enddate)}</div><div class="oc-detail-title">${esc(record.Title||'Untitled animation')}</div><div class="oc-detail-sub">Mission ${esc(rcMissionIds(record).join(', ')||'—')} · SAP ${esc(record.sapcode||'—')} · ${esc(shortReportTypes(record).join(', ')||'No report type')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Final status · read only</div>${oc_readOnlyCheck(!!record.reporting_compliant,'Reporting compliance (75% minimum)',complianceHelp)}${oc_readOnlyCheck(!!record.kpis_ok,'KPIs checked by Insights','Results and data quality confirmed')}${oc_readOnlyCheck(!!record.global_feedback_received,'Global feedback','Final feedback received')}</div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div></div><div class="oc-detail-foot" style="color:${ready?'var(--green)':'var(--amber)'}">Operations view only · ${ready?'all final checks are complete':'updates are made in Insights Check'}</div>`;}
+async function oc_openReporting(id){const record=oc_rows.find(item=>String(item.id)===String(id));if(!record)return;rc_selectedTrackingId=String(record.id);rc_selectedTrackingIds=new Set([String(record.id)]);rc_initialized=true;setView('rc');await rc_loadTrackingPickers();document.getElementById('rc_from').value=record.startdate||ocToday();document.getElementById('rc_to').value=record.enddate||ocToday();rc_filterOptions={};rc_filterState={};rc_filterMode={};rc_forceAllFilters=true;rc_kpiFilter='';await rc_load();rc_populateFilters();rc_render();rc_renderSapOptions();}
 
 // ── Reporting Check ─────────────────────────────────────────────────────────
 let rc_data = [];
@@ -1576,10 +1668,11 @@ let rc_filterState = {};
 let rc_filterMode = {};
 let rc_forceAllFilters = false;
 let rc_kpiFilter = '';
+let rc_effectiveFrom = '';
+let rc_effectiveTo = '';
 const RC_EMPTY = '__RC_EMPTY__';
 
 function rc_dateChanged(){
-  home_syncDatesFromReporting();
   clearTimeout(rc_dateTimer);
   rc_dateTimer = setTimeout(()=>{ if(document.getElementById('rc_from').value && document.getElementById('rc_to').value) rc_load(); }, 400);
 }
@@ -1657,23 +1750,22 @@ function rc_exportExcel(){
   XLSX.writeFile(wb, fname);
 }
 
-function rc_resetFilters(){
+async function rc_resetFilters(){
   rc_filterOptions={};
   rc_filterState={};
   rc_filterMode={};
   rc_forceAllFilters=true;
   rc_kpiFilter='';
   rc_defaultReportTypePending=true;
+  rc_selectedTrackingId=null;rc_selectedTrackingIds=new Set();
   const reportTypePicker=document.getElementById('rc_record_report_type');if(reportTypePicker)reportTypePicker.value='';
-  const campaignPicker=document.getElementById('rc_record_campaign'),sapPicker=document.getElementById('rc_record_sap'),searchPicker=document.getElementById('rc_record_search');
-  if(campaignPicker)campaignPicker.value='';if(sapPicker)sapPicker.value='';if(searchPicker)searchPicker.value='';rc_selectedTrackingId=null;
+  const sapSearch=document.getElementById('rc_sap_search');if(sapSearch)sapSearch.value='';
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.toISOString().split('T')[0];
   document.getElementById('rc_from').value = yStr;
   document.getElementById('rc_to').value   = yStr;
-  rc_loadTrackingPickers();
-  home_syncDatesFromReporting();
-  rc_load();
+  await rc_loadTrackingPickers();
+  await rc_load();
 }
 
 async function rc_initIfNeeded(forceRefresh=false){
@@ -1684,13 +1776,8 @@ async function rc_initIfNeeded(forceRefresh=false){
     const yStr = yesterday.toISOString().split('T')[0];
     document.getElementById('rc_from').value = yStr;
     document.getElementById('rc_to').value   = yStr;
-    home_syncDatesFromReporting();
-    home_loading=true;
-    home_error='';
-    home_render();
-    const pickerTask=rc_loadTrackingPickers();
-    const reportingTask=rc_load();
-    await Promise.allSettled([pickerTask,reportingTask]);
+    await rc_loadTrackingPickers();
+    await rc_load();
   }else{
     await rc_loadTrackingPickers();
     if(forceRefresh)await rc_load();
@@ -1705,37 +1792,68 @@ async function rc_loadTrackingPickers(){
     ]);}
     catch(error){return;}
   }
-  const campaign=document.getElementById('rc_record_campaign'),sap=document.getElementById('rc_record_sap'),reportType=document.getElementById('rc_record_report_type'),search=document.getElementById('rc_record_search');if(!campaign||!sap||!reportType||!search)return;
-  const currentCampaign=campaign.value,currentSap=sap.value;
+  const reportType=document.getElementById('rc_record_report_type');if(!reportType)return;
   const defaultType=rc_trackingReportTypes.find(type=>String(type.type||'').trim().toLowerCase()==='bi insights');
-  reportType.innerHTML=defaultType?`<option value="${esc(defaultType.id)}">BI Insights</option>`:'<option value="">BI Insights unavailable</option>';
-  reportType.value=defaultType?String(defaultType.id):'';
-  reportType.disabled=true;
+  const previous=reportType.value;
+  reportType.innerHTML='<option value="">All report types</option>'+rc_trackingReportTypes.map(type=>`<option value="${esc(type.id)}">${esc(type.type||`Type ${type.id}`)}</option>`).join('');
+  const nextType=rc_defaultReportTypePending?(defaultType?String(defaultType.id):''):previous;
+  reportType.value=[...reportType.options].some(option=>option.value===nextType)?nextType:'';
+  reportType.disabled=false;
   rc_defaultReportTypePending=false;
-  const today=new Date().toISOString().slice(0,10),isActive=record=>record.startdate<=today&&record.enddate>=today;
-  const records=rc_trackingRecords.filter(record=>record.enddate>=RC_MIN_DATE&&defaultType&&rcTrackingIds(record.report_type_ids).includes(String(defaultType.id)))
-    .filter(record=>!rcIsStandby(record,rc_trackingRecords))
-    .filter(record=>!rcNorm(search.value)||rcNorm(`${record.Title||''} ${record.sapcode||''} ${rcMissionIds(record).join(' ')}`).includes(rcNorm(search.value)))
-    .sort((a,b)=>Number(isActive(b))-Number(isActive(a))||String(b.enddate||'').localeCompare(String(a.enddate||''))||String(a.Title||'').localeCompare(String(b.Title||'')));
-  const option=(record,label)=>`<option value="${record.id}"${isActive(record)?' style="background:#e6f4ea;color:#137333;font-weight:600;"':''}>${isActive(record)?'● ACTIVE · ':''}${label}</option>`;
-  campaign.innerHTML='<option value="">Select campaign</option>'+records.filter(record=>record.Title).map(record=>option(record,`${esc(record.Title)}${record.sapcode?` · ${esc(record.sapcode)}`:''}${rcMissionIds(record).length?` · Missions ${esc(rcMissionIds(record).join(', '))}`:''}`)).join('');
-  sap.innerHTML='<option value="">Select SAP code</option>'+records.filter(record=>record.sapcode).map(record=>option(record,`${esc(record.sapcode)}${rcMissionIds(record).length?` · Missions ${esc(rcMissionIds(record).join(', '))}`:''}${record.Title?` · ${esc(record.Title)}`:''}`)).join('');
-  campaign.value=records.some(record=>String(record.id)===String(currentCampaign))?currentCampaign:'';
-  sap.value=records.some(record=>String(record.id)===String(currentSap))?currentSap:'';
+  rc_renderSapOptions(document.getElementById('rc_sap_search')?.value||'');
 }
+function rcRecordBusinessValues(record,key){
+  if(key==='agency')return resolveIds(record.company_ids,allCo,'name');
+  if(key==='sector')return shortSectors(record);
+  if(key==='store')return [...new Set([...shortStores(record),...String(record.store||'').split(',').map(value=>value.trim()).filter(Boolean)])];
+  if(key==='client')return [shortClient(record)||record.client||''].filter(Boolean);
+  if(key==='brand')return [...new Set([...shortBrands(record),...String(record.brand||'').split(',').map(value=>value.trim()).filter(Boolean)])];
+  return [];
+}
+function rcTrackingMatchesBusinessFilters(record){
+  return RC_FILTER_DEFS.every(def=>{
+    if((rc_filterMode[def.key]||'all')==='all')return true;
+    const selected=rc_filterState[def.key]||new Set();
+    return rcRecordBusinessValues(record,def.key).map(value=>String(value).trim()).filter(Boolean).some(value=>selected.has(value));
+  });
+}
+function rcSelectedTrackingRecords(source=rc_trackingRecords){return source.filter(record=>rc_selectedTrackingIds.has(String(record.id)));}
+function rcAvailableTrackingRecords(){
+  const reportTypeId=document.getElementById('rc_record_report_type')?.value||'';
+  const today=new Date().toISOString().slice(0,10),isActive=record=>record.startdate<=today&&record.enddate>=today;
+  return rc_trackingRecords.filter(record=>record.startdate&&record.enddate&&record.enddate>=RC_MIN_DATE&&(record.Title||record.sapcode))
+    .filter(record=>!reportTypeId||rcTrackingIds(record.report_type_ids).includes(String(reportTypeId)))
+    .filter(record=>!rcIsStandby(record,rc_trackingRecords))
+    .filter(rcTrackingMatchesBusinessFilters)
+    .sort((a,b)=>Number(isActive(b))-Number(isActive(a))||String(b.enddate||'').localeCompare(String(a.enddate||''))||String(a.Title||'').localeCompare(String(b.Title||'')));
+}
+function rc_updateSapButton(){
+  const label=document.getElementById('rc_sap_label'),button=document.getElementById('rc_sap_btn');if(!label||!button)return;
+  const selected=rcSelectedTrackingRecords();
+  label.textContent=!selected.length?'SAP / Campaign: All':selected.length===1?`${selected[0].sapcode||'No SAP'} — ${selected[0].Title||selected[0].brand||'Untitled'}`:`SAP / Campaign: ${selected.length} selected`;
+  button.classList.toggle('active',selected.length>0);
+}
+function rc_renderSapOptions(query=''){
+  const list=document.getElementById('rc_sap_options');if(!list)return;
+  const term=rcNorm(query),today=new Date().toISOString().slice(0,10);
+  const records=rcAvailableTrackingRecords().filter(record=>!term||rcNorm(`${record.sapcode||''} ${record.Title||''} ${record.brand||''} ${rcMissionIds(record).join(' ')}`).includes(term));
+  list.innerHTML=records.map(record=>{const active=record.startdate<=today&&record.enddate>=today,missions=rcMissionIds(record);return `<label class="rc-ms-opt${active?' rc-sap-active':''}"><input type="checkbox" value="${esc(record.id)}"${rc_selectedTrackingIds.has(String(record.id))?' checked':''} onchange="rc_toggleSapSelection('${esc(record.id)}',this.checked)"><span><span class="rc-sap-primary">${active?'● ACTIVE · ':''}${esc(record.sapcode||'No SAP code')} — ${esc(record.Title||record.brand||'Untitled')}</span><span class="rc-sap-secondary">${esc(record.startdate||'—')} → ${esc(record.enddate||'—')}${missions.length?` · Mission ${esc(missions.join(', '))}`:''}</span></span></label>`;}).join('')||'<div class="rc-dd-none">No matching Insights Manager records</div>';
+  rc_updateSapButton();
+}
+function rc_toggleSapPicker(event){event?.stopPropagation();const panel=document.getElementById('rc_sap_panel'),button=document.getElementById('rc_sap_btn');if(!panel||!button)return;const opening=panel.style.display!=='block';rc_closeFilterMenus();if(opening){panel.style.display='block';button.setAttribute('aria-expanded','true');rc_renderSapOptions(document.getElementById('rc_sap_search')?.value||'');setTimeout(()=>document.getElementById('rc_sap_search')?.focus(),0);}}
+function rc_closeSapPicker(){const panel=document.getElementById('rc_sap_panel'),button=document.getElementById('rc_sap_btn');if(panel)panel.style.display='none';if(button)button.setAttribute('aria-expanded','false');}
+async function rc_applyTrackingSelection(){
+  const records=rcSelectedTrackingRecords();rc_selectedTrackingId=records.length===1?String(records[0].id):null;
+  if(records.length){document.getElementById('rc_from').value=records.map(record=>record.startdate).filter(Boolean).sort()[0]||document.getElementById('rc_from').value;document.getElementById('rc_to').value=records.map(record=>record.enddate).filter(Boolean).sort().at(-1)||document.getElementById('rc_to').value;}
+  rc_kpiFilter='';rc_emptyState=null;rc_updateSapButton();await rc_load();rc_renderSapOptions(document.getElementById('rc_sap_search')?.value||'');
+}
+async function rc_toggleSapSelection(id,checked){if(checked)rc_selectedTrackingIds.add(String(id));else rc_selectedTrackingIds.delete(String(id));await rc_applyTrackingSelection();}
+async function rc_clearSapSelection(){rc_selectedTrackingIds=new Set();rc_selectedTrackingId=null;const search=document.getElementById('rc_sap_search');if(search)search.value='';await rc_applyTrackingSelection();}
+async function rc_reportTypeChanged(){rc_defaultReportTypePending=false;const typeId=document.getElementById('rc_record_report_type')?.value||'';rc_selectedTrackingIds=new Set([...rc_selectedTrackingIds].filter(id=>{const record=rc_trackingRecords.find(item=>String(item.id)===id);return record&&(!typeId||rcTrackingIds(record.report_type_ids).includes(String(typeId)));}));await rc_applyTrackingSelection();}
 
 async function rc_pickTrackingRecord(id){
-  if(!id){rc_selectedTrackingId=null;rc_emptyState=null;const campaign=document.getElementById('rc_record_campaign'),sap=document.getElementById('rc_record_sap');if(campaign)campaign.value='';if(sap)sap.value='';rc_filterMode.campaign='all';rc_filterMode.sapcode='all';rc_filterState.campaign=new Set();rc_filterState.sapcode=new Set();rc_populateFilters();rc_render();return;}
-  await rc_loadTrackingPickers();
-  const record=rc_trackingRecords.find(item=>String(item.id)===String(id));if(!record)return;
-  rc_selectedTrackingId=String(record.id);
-  const campaign=document.getElementById('rc_record_campaign'),sap=document.getElementById('rc_record_sap');if(campaign)campaign.value=String(id);if(sap)sap.value=String(id);
-  document.getElementById('rc_from').value=record.startdate;document.getElementById('rc_to').value=record.enddate;
-  rc_filterOptions={};rc_filterState={};rc_filterMode={};rc_forceAllFilters=true;rc_kpiFilter='';
-  await rc_load();
-  rc_filterMode.campaign='custom';rc_filterState.campaign=new Set([String(record.Title||record.brand||'')].filter(Boolean));
-  rc_filterMode.sapcode='custom';rc_filterState.sapcode=new Set([String(record.sapcode||'')].filter(Boolean));
-  rc_populateFilters();rc_render();
+  rc_selectedTrackingIds=id?new Set([String(id)]):new Set();
+  await rc_applyTrackingSelection();
 }
 
 const rcNorm=value=>String(value??'')
@@ -1821,21 +1939,23 @@ function rcEmptyState(title,detail='',hint='',tone='amber'){
 async function rc_load(){
   const fromInput=document.getElementById('rc_from');
   const from = fromInput.value&&fromInput.value<RC_MIN_DATE?RC_MIN_DATE:fromInput.value;
-  const to   = document.getElementById('rc_to').value;
+  const requestedTo=document.getElementById('rc_to').value;
+  const today=homeToday();
+  const to=requestedTo&&requestedTo<today?requestedTo:today;
   if(fromInput.value!==from)fromInput.value=from;
-  if(!from || !to){ home_loading=false;home_error='Select both dates';home_render();toast('Please set a date range','error');return; }
-  if(from>to){ home_loading=false;home_error='Invalid date range';home_render();toast('The From date must be before the To date','error');return; }
+  if(!from || !requestedTo){toast('Please set a date range','error');return;}
+  if(from>requestedTo){toast('The From date must be before the To date','error');return;}
+  rc_effectiveFrom=from;rc_effectiveTo=to;
   const requestId=++rc_loadRequest;
   rc_emptyState=null;
-  const selectedTracking=rc_trackingRecords.find(record=>String(record.id)===String(rc_selectedTrackingId));
-  const selectedMissions=selectedTracking?rcMissionIds(selectedTracking):[];
-  const selectedScheduleFilter=selectedMissions.length
+  const selectedTrackings=rcSelectedTrackingRecords();
+  const selectedTracking=selectedTrackings.length===1?selectedTrackings[0]:null;
+  const selectedMissions=[...new Set(selectedTrackings.flatMap(rcMissionIds))];
+  const selectedSaps=[...new Set(selectedTrackings.map(record=>String(record.sapcode||'').trim()).filter(Boolean))];
+  const selectedScheduleFilter=selectedTrackings.length&&selectedTrackings.every(record=>rcMissionIds(record).length)
     ?`&mission_id=in.(${selectedMissions.map(id=>encodeURIComponent(id)).join(',')})`
-    :(selectedTracking?.sapcode?`&campaign_sapcode=eq.${encodeURIComponent(selectedTracking.sapcode)}`:'');
-  home_loading=true;
-  home_error='';
-  home_render();
-
+    :(selectedTrackings.length&&selectedTrackings.every(record=>record.sapcode)&&!selectedMissions.length
+      ?`&campaign_sapcode=in.(${selectedSaps.map(value=>encodeURIComponent(value)).join(',')})`:'');
   document.getElementById('rc_area').innerHTML = `
     <div style="padding:48px;text-align:center;color:var(--g400);">
       <div style="width:28px;height:28px;border:2px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px;"></div>
@@ -1844,6 +1964,12 @@ async function rc_load(){
   document.getElementById('rc_kpis').innerHTML = '';
   document.getElementById('rc_subline_text').textContent = '';
   document.getElementById('rc_sync_badge').innerHTML = '';
+
+  if(from>to){
+    rc_data=[];
+    rc_emptyState={title:'No shifts due yet',detail:`This period starts on ${from}. Compliance and missing shifts are calculated through today (${today}).`,hint:'Future shifts will appear automatically on their scheduled date.',tone:'amber'};
+    rc_populateFilters(true);rc_render();return;
+  }
 
   try{
     const [schedRows,trackingRows,reportTypeRows,storesWithSector] = await Promise.all([
@@ -1881,10 +2007,10 @@ async function rc_load(){
 
     if(!reportingSchedRows.length){
       rc_data=[];
-      const selectedLabel=selectedTracking?.Title||selectedTracking?.sapcode||'this mission / campaign';
+      const selectedLabel=selectedTrackings.length?selectedTrackings.map(record=>record.Title||record.sapcode).filter(Boolean).join(', '):'this mission / campaign';
       rc_emptyState={
         title:'No promoters assigned to this mission / campaign',
-        detail:selectedTracking
+        detail:selectedTrackings.length
           ?`No eligible promoter shifts are assigned to ${selectedLabel} for ${from} → ${to}.`
           :`No eligible promoter shifts were found for ${from} → ${to}.`,
         hint:'Assign promoters in the schedule, then refresh Reporting Check.',
@@ -1892,8 +2018,6 @@ async function rc_load(){
       };
       rc_populateFilters(true);
       rc_render();
-      home_loading=false;
-      home_render();
       return;
     }
 
@@ -1913,7 +2037,7 @@ async function rc_load(){
 
     if(!deduped.length){
       rc_data=[];
-      const selectedLabel=selectedTracking?.Title||selectedTracking?.sapcode||'this mission / campaign';
+      const selectedLabel=selectedTrackings.length?selectedTrackings.map(record=>record.Title||record.sapcode).filter(Boolean).join(', '):'this mission / campaign';
       rc_emptyState={
         title:'No promoters assigned to this mission / campaign',
         detail:`No eligible promoter shifts are assigned to ${selectedLabel} for ${from} → ${to}.`,
@@ -1922,17 +2046,16 @@ async function rc_load(){
       };
       rc_populateFilters(true);
       rc_render();
-      home_loading=false;
-      home_render();
       return;
     }
 
     const reportTypeById=new Map(reportTypeRows.map(type=>[String(type.id),type.type]));
-    const isBiInsights=record=>rcTrackingIds(record?.report_type_ids)
-      .some(id=>String(reportTypeById.get(id)||'').trim().toLowerCase()==='bi insights');
+    const selectedReportTypeId=document.getElementById('rc_record_report_type')?.value||'';
+    const hasSelectedReportType=record=>!selectedReportTypeId||rcTrackingIds(record?.report_type_ids).includes(String(selectedReportTypeId));
+    const selectedTrackingSet=new Set(selectedTrackings.map(record=>String(record.id)));
     const eligibleTrackingRows=trackingRows.filter(record=>
-      !record.cancelled_date&&!rcIsNoReporting(record)&&isBiInsights(record)&&!rcIsStandby(record,trackingRows)
-      &&(!selectedTracking||String(record.id)===String(selectedTracking.id))
+      !record.cancelled_date&&!rcIsNoReporting(record)&&hasSelectedReportType(record)&&!rcIsStandby(record,trackingRows)
+      &&(!selectedTrackingSet.size||selectedTrackingSet.has(String(record.id)))
     );
     const linkedSchedules=deduped.map(schedule=>({schedule,tracking:rcFindTrackingRecord(schedule,eligibleTrackingRows)}));
     const eligibleSchedules=linkedSchedules
@@ -1943,9 +2066,9 @@ async function rc_load(){
 
     if(!eligibleSchedules.length){
       rc_data=[];
-      const expectedSap=selectedTracking?.sapcode||'—';
+      const expectedSap=selectedSaps.join(', ')||'—';
       const expectedMissions=selectedMissions.length?selectedMissions.join(', '):'none entered';
-      rc_emptyState=selectedTracking?{
+      rc_emptyState=selectedTrackings.length?{
         title:'Promoter shifts found, but not linked',
         detail:'Scheduled promoter shifts exist, but their Mission ID or SAP code does not match this Insights Check record.',
         hint:`Expected SAP: ${expectedSap} · Mission IDs: ${expectedMissions}`,
@@ -1958,8 +2081,6 @@ async function rc_load(){
       };
       rc_populateFilters(true);
       rc_render();
-      home_loading=false;
-      home_render();
       return;
     }
 
@@ -2062,16 +2183,10 @@ async function rc_load(){
     rc_populateFilters(rc_forceAllFilters);
     rc_forceAllFilters=false;
     rc_render();
-    home_loading=false;
-    home_render();
-
-    document.getElementById('rc_sync_badge').innerHTML =
-      `<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;">\ud83d\udd04 Azure sync ${rc_timeAgo(lastSynced)}</span>`;
+    document.getElementById('rc_sync_badge').innerHTML =lastSynced
+      ?`<span class="rc-sync-pill">↻ ${rc_timeAgo(lastSynced)}</span>`:'';
 
   } catch(e){
-    home_loading=false;
-    home_error='Compliance unavailable';
-    home_render();
     document.getElementById('rc_area').innerHTML =
       `<div style="padding:48px;text-align:center;color:var(--red);">Error: ${e.message}</div>`;
   }
@@ -2762,20 +2877,9 @@ function rc_storeUpdateLabel(){
 const RC_FILTER_DEFS = [
   {key:'agency',label:'Agency',values:r=>r.trackingAgencies},
   {key:'sector',label:'Sector',values:r=>r.trackingSectors},
-  {key:'campaign',label:'Campaign',values:r=>[r.trackingTitle]},
-  {key:'reportType',label:'Report Type',values:r=>r.reportTypes},
+  {key:'store',label:'Store',values:r=>r.trackingStores},
   {key:'client',label:'Client',values:r=>r.trackingClients},
   {key:'brand',label:'Brand',values:r=>r.trackingBrands},
-  {key:'store',label:'Store',values:r=>r.trackingStores},
-  {key:'sapcode',label:'SAP Code',values:r=>[r.trackingSapCode]},
-  {key:'status',label:'Status',values:r=>[r.status],staticOptions:[
-    {value:'complete',label:'Reported'},
-    {value:'partial',label:'Partial'},
-    {value:'missing',label:'Missing'},
-    {value:'absent',label:'Absent'},
-    {value:'absent_backup',label:'Absent + Backup'},
-    {value:'pending',label:'Pending'},
-  ]},
 ];
 
 function rcFilterValues(row,def){
@@ -2880,6 +2984,7 @@ function rc_filterChanged(key,changedInput){
     ? new Set([changedInput.value])
     : new Set([...root.querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value));
   rc_populateFilters();
+  rc_renderSapOptions(document.getElementById('rc_sap_search')?.value||'');
   rc_render();
   const panel=document.getElementById('rc_filter_panel_'+key);
   const button=document.getElementById('rc_filter_btn_'+key);
@@ -2898,6 +3003,7 @@ function rc_setFilterSelection(key,checked){
   rc_filterMode[key]=checked?'all':'custom';
   rc_filterState[key]=new Set();
   rc_populateFilters();
+  rc_renderSapOptions(document.getElementById('rc_sap_search')?.value||'');
   rc_render();
   const panel=document.getElementById('rc_filter_panel_'+key);
   const button=document.getElementById('rc_filter_btn_'+key);
@@ -2960,13 +3066,12 @@ function rc_render(){
   const totalPieces   = contextRows.reduce((n,r)=>n+(r.pieces||0),0);
   const totalTurnover = contextRows.reduce((n,r)=>n+(r.turnover||0),0);
 
-  const from = document.getElementById('rc_from')?.value || '';
-  const to   = document.getElementById('rc_to')?.value   || '';
+  const from = rc_effectiveFrom||document.getElementById('rc_from')?.value||'';
+  const to   = rc_effectiveTo||document.getElementById('rc_to')?.value||'';
   const subline = document.getElementById('rc_subline_text');
 
   if(subline){
-    subline.textContent =
-      `${total} displayed · ${complete} reported · Insights Check source · ${from} → ${to}`;
+    subline.textContent='';
   }
 
   document.getElementById('rc_kpis').innerHTML = [
