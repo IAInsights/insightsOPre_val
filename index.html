@@ -13,7 +13,7 @@
 :root{
   --blue:#1060e8;--blue-dark:#0a4bbf;--blue-light:#e8f0fe;
   --g50:#f8f9fa;--g100:#f1f3f4;--g200:#e8eaed;--g300:#dadce0;
-  --g400:#bdc1c6;--g500:#80868b;--g600:#5f6368;--g900:#202124;
+  --g400:#bdc1c6;--g500:#80868b;--g600:#5f6368;--g700:#4b4f52;--g800:#303134;--g900:#202124;
   --red:#d93025;--red-light:#fce8e6;
   --green:#1e8e3e;--green-light:#e6f4ea;
   --purple:#6200ea;--purple-light:#f3e5f5;
@@ -26,7 +26,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .header{background:var(--blue);color:#fff;height:52px;display:flex;align-items:center;padding:0 24px;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-shrink:0;}
 .header h1{font-size:16px;font-weight:700;white-space:nowrap;}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.app-release{position:relative;flex-shrink:0}.app-release[open]{z-index:20000}.app-release summary{list-style:none;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,.38);border-radius:12px;background:rgba(255,255,255,.13);color:#fff;font-size:9.5px;font-weight:700;white-space:nowrap;user-select:none}.app-release summary::-webkit-details-marker{display:none}.app-release[open] summary{background:#fff;color:var(--blue)}.release-panel{position:absolute;z-index:20001;top:32px;left:0;width:350px;max-height:min(70vh,430px);overflow-y:auto;padding:14px 15px;background:#fff;color:var(--g700);border:1px solid var(--g200);border-radius:9px;box-shadow:0 12px 30px rgba(15,23,42,.22)}.release-panel:before{content:"";position:absolute;top:-6px;left:20px;width:10px;height:10px;background:#fff;border-left:1px solid var(--g200);border-top:1px solid var(--g200);transform:rotate(45deg)}.header-right .release-panel:before{left:auto;right:20px}.release-heading{font-size:13px;font-weight:800;color:var(--g900)}.release-date{margin-top:4px;font-size:10.5px;font-weight:700;color:var(--blue)}.release-list{display:block!important;visibility:visible!important;margin:11px 0 0!important;padding:0 0 0 19px!important;color:var(--g700)!important;font-size:11px;line-height:1.5;list-style:disc outside!important}.release-list li{display:list-item!important;visibility:visible!important;color:var(--g700)!important}.release-list li+li{margin-top:6px}.release-list strong{color:var(--blue)}
+.app-release{position:relative;flex-shrink:0}.app-release[open]{z-index:20000}.app-release summary{list-style:none;cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,.38);border-radius:12px;background:rgba(255,255,255,.13);color:#fff;font-size:9.5px;font-weight:700;white-space:nowrap;user-select:none}.app-release summary::-webkit-details-marker{display:none}.app-release[open] summary{background:#fff;color:var(--blue)}.release-panel{position:absolute;z-index:20001;top:32px;left:0;width:350px;max-height:min(70vh,430px);overflow-y:auto;padding:14px 15px;background:#fff;color:var(--g700,#4b4f52);border:1px solid var(--g200);border-radius:9px;box-shadow:0 12px 30px rgba(15,23,42,.22)}.release-panel:before{content:"";position:absolute;top:-6px;left:20px;width:10px;height:10px;background:#fff;border-left:1px solid var(--g200);border-top:1px solid var(--g200);transform:rotate(45deg)}.header-right .release-panel:before{left:auto;right:20px}.release-heading{font-size:13px;font-weight:800;color:var(--g900)}.release-date{margin-top:4px;font-size:10.5px;font-weight:700;color:var(--blue)}.release-list{display:block!important;visibility:visible!important;margin:11px 0 0!important;padding:0 0 0 19px!important;color:var(--g700,#4b4f52)!important;font-size:11px;line-height:1.5;list-style:disc outside!important}.release-list li{display:list-item!important;visibility:visible!important;color:var(--g700,#4b4f52)!important}.release-list li+li{margin-top:6px}.release-list strong{color:var(--blue)}
 #rc_subline_text{display:none!important}
 .company-filter{padding:5px 26px 5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='white'/%3E%3C/svg%3E") no-repeat right 9px center;appearance:none;font-family:inherit;font-size:12px;font-weight:500;color:#fff;cursor:pointer;outline:none;min-width:130px;}
 .company-filter option{color:var(--g900);background:#fff;}
@@ -387,11 +387,12 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.09.17.7</summary>
+      <summary title="Open version history">V2026.09.18.1</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.09.17.7</div>
+        <div class="release-heading">New version V2026.09.18.1</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
+          <li>Fixed the invisible text in the What&rsquo;s new popup.</li>
           <li>Reports Validation now displays the report type for every record.</li>
           <li>The Power BI column now shows the saved Power BI report name.</li>
           <li>Report type and Power BI name are also visible in the selected report details.</li>
