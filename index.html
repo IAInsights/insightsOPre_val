@@ -387,15 +387,15 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.09.18.1</summary>
+      <summary title="Open version history">V2026.09.21.1</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.09.18.1</div>
+        <div class="release-heading">New version V2026.09.21.1</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>Fixed the invisible text in the What&rsquo;s new popup.</li>
-          <li>Reports Validation now displays the report type for every record.</li>
-          <li>The Power BI column now shows the saved Power BI report name.</li>
-          <li>Report type and Power BI name are also visible in the selected report details.</li>
+          <li>Compliance is now calculated only through yesterday.</li>
+          <li>Today and future shifts no longer count as missing or reduce compliance.</li>
+          <li>Today and future rows are clearly marked as Not due yet.</li>
+          <li>The same cutoff now applies to Reporting Check, Closing Soon and report validation.</li>
         </ul>
       </div>
     </details>
@@ -605,14 +605,28 @@ const shortClient  = r=>{const v=resolveId(r.client_fk,allCl,'client'); return v
 const shortSectors = r=>resolveIds(r.sector_ids,allSectors,'Name').filter(Boolean);
 const shortReportTypes=r=>resolveIds(Array.isArray(r?.report_type_ids)?r.report_type_ids:String(r?.report_type_ids||'').replace(/[{}]/g,'').split(',').filter(Boolean),allRT,'type').filter(Boolean);
 
+const complianceToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+function complianceYesterday(){
+  const [year,month,day]=complianceToday().split('-').map(Number);
+  const date=new Date(Date.UTC(year,month-1,day));
+  date.setUTCDate(date.getUTCDate()-1);
+  return date.toISOString().slice(0,10);
+}
+const complianceIsDue=value=>String(value||'').slice(0,10)<complianceToday();
+
 async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmIds=null,asOfDate=''}={}){
   const targets=records.filter(record=>record.startdate&&record.enddate);
   if(!targets.length)return;
   const from=targets.map(record=>record.startdate).sort()[0];
   const latestEnd=targets.map(record=>record.enddate).sort().reverse()[0];
-  const today=homeToday();
-  const cutoff=asOfDate||today;
+  const yesterday=complianceYesterday();
+  const requestedCutoff=asOfDate||yesterday;
+  const cutoff=requestedCutoff<yesterday?requestedCutoff:yesterday;
   const to=cutoff<latestEnd?cutoff:latestEnd;
+  if(from>to){
+    targets.forEach(record=>{record.reporting_compliance_total=0;record.reporting_compliance_reported=0;record.reporting_compliance_absent=0;record.reporting_compliance_backup=0;record.reporting_compliance_pct=0;});
+    return;
+  }
   try{
     const [scheduleRows,questionnaireRows]=await Promise.all([
       sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,brand,client,role,campaign_name,campaign_sapcode,timeslot_status&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc`),
@@ -1701,7 +1715,7 @@ function rc_exportExcel(){
     return (a.promoter||'').localeCompare(b.promoter||'');
   });
 
-  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing', absent:'Absent', absent_backup:'Absent + Backup', pending:'En attente' };
+  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing', absent:'Absent', absent_backup:'Absent + Backup', pending:'En attente', not_due:'Not due yet' };
 
   const sheetData = rows.map(r => ({
     'Date': r.day,
@@ -1942,8 +1956,8 @@ async function rc_load(){
   const fromInput=document.getElementById('rc_from');
   const from = fromInput.value&&fromInput.value<RC_MIN_DATE?RC_MIN_DATE:fromInput.value;
   const requestedTo=document.getElementById('rc_to').value;
-  const today=homeToday();
-  const to=requestedTo&&requestedTo<today?requestedTo:today;
+  const today=complianceToday();
+  const to=requestedTo;
   if(fromInput.value!==from)fromInput.value=from;
   if(!from || !requestedTo){toast('Please set a date range','error');return;}
   if(from>requestedTo){toast('The From date must be before the To date','error');return;}
@@ -1969,7 +1983,7 @@ async function rc_load(){
 
   if(from>to){
     rc_data=[];
-    rc_emptyState={title:'No shifts due yet',detail:`This period starts on ${from}. Compliance and missing shifts are calculated through today (${today}).`,hint:'Future shifts will appear automatically on their scheduled date.',tone:'amber'};
+    rc_emptyState={title:'No shifts due yet',detail:`This period starts on ${from}. Compliance and missing shifts are calculated through yesterday (${complianceYesterday()}).`,hint:'Today and future shifts remain visible but do not affect compliance.',tone:'amber'};
     rc_populateFilters(true);rc_render();return;
   }
 
@@ -2145,7 +2159,8 @@ async function rc_load(){
 
       let status;
       const ts = (r.timeslot_status||'').toLowerCase();
-      if(ts.includes('absent avec'))    status = 'absent_backup';
+      if(!complianceIsDue(r.day))       status = 'not_due';
+      else if(ts.includes('absent avec'))    status = 'absent_backup';
       else if(ts.includes('absent'))    status = 'absent';
       else if(ts.includes('attente'))   status = 'pending';
       else if(hasQ)                     status = 'complete';
@@ -3051,22 +3066,23 @@ document.addEventListener('click',e=>{
 function rc_render(){
   const contextRows=rc_getFilteredRows(false);
   let rows=rcApplyKpiFilter([...contextRows]);
+  const dueRows=contextRows.filter(row=>complianceIsDue(row.day));
 
   rows.sort((a,b) => {
     if(a.day !== b.day) return b.day.localeCompare(a.day);
     return (a.promoter||'').localeCompare(b.promoter||'');
   });
 
-  const total         = contextRows.length;
-  const complete      = contextRows.filter(r=>r.status==='complete').length;
-  const partial       = contextRows.filter(r=>r.status==='partial').length;
-  const missing       = contextRows.filter(r=>r.status==='missing').length;
-  const absent        = contextRows.filter(r=>r.status==='absent').length;
-  const absentBackup  = contextRows.filter(r=>r.status==='absent_backup').length;
-  const pending       = contextRows.filter(r=>r.status==='pending').length;
+  const total         = dueRows.length;
+  const complete      = dueRows.filter(r=>r.status==='complete').length;
+  const partial       = dueRows.filter(r=>r.status==='partial').length;
+  const missing       = dueRows.filter(r=>r.status==='missing').length;
+  const absent        = dueRows.filter(r=>r.status==='absent').length;
+  const absentBackup  = dueRows.filter(r=>r.status==='absent_backup').length;
+  const pending       = dueRows.filter(r=>r.status==='pending').length;
   const pct           = (total-absent-absentBackup-pending) ? Math.round(complete/(total-absent-absentBackup-pending)*100) : 0;
-  const totalPieces   = contextRows.reduce((n,r)=>n+(r.pieces||0),0);
-  const totalTurnover = contextRows.reduce((n,r)=>n+(r.turnover||0),0);
+  const totalPieces   = dueRows.reduce((n,r)=>n+(r.pieces||0),0);
+  const totalTurnover = dueRows.reduce((n,r)=>n+(r.turnover||0),0);
 
   const from = rc_effectiveFrom||document.getElementById('rc_from')?.value||'';
   const to   = rc_effectiveTo||document.getElementById('rc_to')?.value||'';
@@ -3106,6 +3122,7 @@ function rc_render(){
   const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
 
   const badge = s => {
+    if(s==='not_due')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--blue-light);color:var(--blue);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">Not due yet</span>`;
     if(s==='complete')      return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--green-light);color:var(--green);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Reported</span>`;
     if(s==='partial')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--amber-light);color:var(--amber);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ Partial</span>`;
     if(s==='absent_backup') return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:#fff7ed;color:#ea580c;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">🔄 Absent + Backup</span>`;
@@ -3113,7 +3130,9 @@ function rc_render(){
     if(s==='pending')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--g100);color:var(--g500);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ En attente</span>`;
     return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--red-light);color:var(--red);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ Missing</span>`;
   };
-  const check = ok => ok
+  const check = (ok,notDue=false) => notDue
+    ? `<span style="color:var(--g400);font-size:14px;">—</span>`
+    : ok
     ? `<span style="color:var(--green);font-weight:800;font-size:14px;">\u2713</span>`
     : `<span style="color:var(--red);font-size:14px;">\u2717</span>`;
 
@@ -3193,8 +3212,8 @@ function rc_render(){
             ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${displaySap}</div>`
             : ''}
         </td>
-        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasQ)}</td>
-        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasS)}</td>
+        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasQ,r.status==='not_due')}</td>
+        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasS,r.status==='not_due')}</td>
         <td style="padding:9px 6px;font-family:monospace;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${mismatchTag(r.schedStoreCode, r.reportedStores)}</td>
         <td style="padding:9px 6px;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${mismatchTag(r.schedBrand, r.reportedBrands)}</td>
         <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;white-space:nowrap;vertical-align:middle;">${r.pieces!=null ? r.pieces.toLocaleString() : '\u2014'}</td>
