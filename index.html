@@ -393,14 +393,14 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.09.23.5</summary>
+      <summary title="Open version history">V2026.09.23.6</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.09.23.5</div>
+        <div class="release-heading">New version V2026.09.23.6</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>All agencies are now visible without an internal scrollbar.</li>
-          <li>The Active BI Insights campaigns panel expands toward the bottom of the page.</li>
-          <li>Sector compliance keeps its own scrollbar when needed.</li>
+          <li>The Agency panel now fits its rows without empty white space or a scrollbar.</li>
+          <li>The Sector panel matches the Agency panel height and keeps its own scrollbar.</li>
+          <li>Active BI Insights campaigns use the extra vertical space.</li>
           <li>Home compliance remains BI Insights only and is calculated through yesterday.</li>
         </ul>
       </div>
@@ -1079,6 +1079,24 @@ function home_renderCampaigns(){
     </div>`;
   }).join('');
 }
+let home_panelSyncFrame=0;
+function home_syncCompliancePanelHeights(){
+  cancelAnimationFrame(home_panelSyncFrame);
+  home_panelSyncFrame=requestAnimationFrame(()=>{
+    const agencyList=document.getElementById('home_country');
+    const sectorList=document.getElementById('home_sector');
+    const agencyPanel=agencyList?.closest('.home-panel');
+    const sectorPanel=sectorList?.closest('.home-panel');
+    if(!agencyList||!sectorList||!agencyPanel||!sectorPanel||!agencyPanel.offsetParent)return;
+    agencyPanel.style.height='auto';
+    sectorPanel.style.height='auto';
+    const headerHeight=agencyPanel.querySelector('.home-panel-head')?.getBoundingClientRect().height||0;
+    const panelHeight=Math.ceil(headerHeight+agencyList.scrollHeight+2);
+    agencyPanel.style.height=`${panelHeight}px`;
+    sectorPanel.style.height=`${panelHeight}px`;
+  });
+}
+window.addEventListener('resize',()=>{if(view==='home')home_syncCompliancePanelHeights();});
 function home_render(){
   const status=document.getElementById('home_status');
   if(status){
@@ -1106,6 +1124,7 @@ function home_render(){
   if(sectorContext)sectorContext.textContent=home_agencyFilter||'All agencies';
   home_renderCompliance('home_country',agencyGroups,true);
   home_renderCompliance('home_sector',home_groupCompliance(sectorRows,shortSectors));
+  home_syncCompliancePanelHeights();
   const note=document.getElementById('home_compliance_note');
   if(note){const [year,month,day]=complianceYesterday().split('-');note.textContent=`Home compliance includes BI Insights records only and is calculated through yesterday (${day}/${month}/${year}). Today and future shifts are excluded.`;}
 }
