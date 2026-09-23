@@ -256,20 +256,25 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .home-kpi{background:#fff;border:1px solid var(--g200);border-radius:8px;padding:9px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .home-kpi-value{font-family:monospace;font-size:20px;font-weight:800;line-height:1.05;}
 .home-kpi-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:2px;}
-.home-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;}
+.home-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;align-items:stretch;}
 .home-panel{background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden;min-width:0;}
+.home-grid .home-panel{display:flex;min-height:0;flex-direction:column;}
 .home-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--g100);}
 .home-panel-head h3{font-size:13px;}
 .home-panel-head span{font-size:11px;color:var(--g500);}
 .home-compliance-list{max-height:180px;overflow-y:auto;}
+#home_country{max-height:none;overflow-y:visible;}
+#home_sector{flex:1;min-height:0;max-height:none;overflow-y:auto;}
 .home-compliance-row{display:grid;grid-template-columns:minmax(90px,1fr) 110px 48px;gap:9px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--g100);font-size:12px;}
 .home-compliance-row:last-child{border-bottom:0;}
 .home-compliance-name{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .home-bar{height:7px;border-radius:10px;background:var(--g100);overflow:hidden;}
 .home-bar span{display:block;height:100%;border-radius:10px;}
 .home-compliance-pct{font-family:monospace;font-weight:800;text-align:right;}
-.home-bottom{display:block;}
-.home-pending-list{display:flex;flex-direction:column;max-height:245px;overflow-y:auto;}
+.home-bottom{display:flex;flex:1;min-height:300px;}
+.home-bottom .home-panel{display:flex;flex:1;min-height:0;flex-direction:column;}
+.home-pending-list{display:flex;flex:1;min-height:250px;max-height:none;flex-direction:column;overflow-y:auto;}
+.home-compliance-note{padding:8px 11px;border:1px solid var(--g200);border-radius:7px;background:#fff;color:var(--g500);font-size:10.5px;line-height:1.4;text-align:center;}
 .home-pending-row{display:grid;grid-template-columns:minmax(250px,1.7fr) minmax(160px,.8fr) 155px 160px;gap:10px;padding:6px 10px;border-bottom:1px solid var(--g200);border-left:3px solid transparent;align-items:center;background:#fff;transition:background .15s,border-color .15s;}
 .home-pending-row:hover{background:var(--g50);border-left-color:var(--blue);}
 .home-pending-row:last-child{border-bottom:0;}
@@ -388,15 +393,15 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.09.21.1</summary>
+      <summary title="Open version history">V2026.09.23.5</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.09.21.1</div>
+        <div class="release-heading">New version V2026.09.23.5</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>Compliance is now calculated only through yesterday.</li>
-          <li>Today and future shifts no longer count as missing or reduce compliance.</li>
-          <li>Today and future rows are clearly marked as Not due yet.</li>
-          <li>The same cutoff now applies to Reporting Check, Closing Soon and report validation.</li>
+          <li>All agencies are now visible without an internal scrollbar.</li>
+          <li>The Active BI Insights campaigns panel expands toward the bottom of the page.</li>
+          <li>Sector compliance keeps its own scrollbar when needed.</li>
+          <li>Home compliance remains BI Insights only and is calculated through yesterday.</li>
         </ul>
       </div>
     </details>
@@ -428,10 +433,11 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
     </div>
     <div class="home-bottom">
       <section class="home-panel">
-        <div class="home-panel-head"><h3>Active Campaigns &amp; Compliance</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 active</span></div></div>
+        <div class="home-panel-head"><h3>Active BI Insights Campaigns &amp; Compliance</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 active</span></div></div>
         <div id="home_pending" class="home-pending-list"></div>
       </section>
     </div>
+    <div id="home_compliance_note" class="home-compliance-note">Home compliance includes BI Insights records only and is calculated through yesterday. Today and future shifts are excluded.</div>
   </div>
 
   <div id="main-filter-toolbar" class="main-filter-toolbar" style="display:none;">
@@ -634,28 +640,24 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
   }
   try{
     const [scheduleRows,questionnaireRows]=await Promise.all([
-      sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,brand,client,role,campaign_name,campaign_sapcode,timeslot_status&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc`),
-      sbGetAll(`legacy_questionnaire?select=Date,Promoter,Promoterid,Store&Date=gte.${from}&Date=lte.${to}`)
+      sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc`),
+      sbGetAll(`legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`)
     ]);
     const excludedRoles=new Set(['Team Leader','Team leader','Team Leader GVA','Superviseur / euse','Superviseur/euse','Téléopérateur/trice']);
     const excludedTerms=['training','coaching','store check','atelier s'];
-    const byRecord=new Map(targets.map(record=>[String(record.id),[]])),seen=new Set();
+    const byRecord=new Map(targets.map(record=>[String(record.id),[]])),seen=new Set(),linkedSchedules=[];
     scheduleRows.forEach(schedule=>{
       const campaign=String(schedule.campaign_name||'').trim().toLowerCase().replace(/\s+/g,' ');
       if(excludedRoles.has(schedule.role)||excludedTerms.some(term=>campaign.includes(term)))return;
       const record=rcFindTrackingRecord(schedule,targets);if(!record)return;
-      const key=`${record.id}|${schedule.day}|${schedule.promoter_id||rcNorm(schedule.promoter_fullname)}|${rcNorm(schedule.store_code||schedule.pos)}`;
+      const key=[record.id,schedule.day,schedule.promoter_id||rcNorm(schedule.promoter_fullname),schedule.pos_id||rcNorm(schedule.store_code||schedule.pos),schedule.gi_brand_id||rcNorm(schedule.brand),schedule.mission_id||'',rcNorm(schedule.campaign_sapcode)].join('|');
       if(seen.has(key))return;
-      seen.add(key);byRecord.get(String(record.id))?.push(schedule);
+      seen.add(key);byRecord.get(String(record.id))?.push(schedule);linkedSchedules.push(schedule);
     });
-    const exactReports=new Set(),promoterDayReports=new Set(),storeDayReports=new Set();
+    const reportAssignments=rcAssignReportedEntries(linkedSchedules,questionnaireRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter'});
+    const storeDayReports=new Set();
     questionnaireRows.forEach(report=>{
-      const store=rcNorm(report.Store),name=rcNorm(report.Promoter);
-      exactReports.add(`${report.Date}|ID:${report.Promoterid}|${store}`);
-      exactReports.add(`${report.Date}|NM:${name}|${store}`);
-      promoterDayReports.add(`${report.Date}|ID:${report.Promoterid}`);
-      promoterDayReports.add(`${report.Date}|NM:${name}`);
-      storeDayReports.add(`${report.Date}|${store}`);
+      storeDayReports.add(`${report.Date}|${String(report.Storeid??'').trim()||rcNorm(report.Store)}`);
     });
     const updates=[];
     targets.forEach(record=>{
@@ -666,20 +668,9 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
       const absent=schedules.filter(isAbsent).length;
       const backup=schedules.filter(isBackup).length;
       const eligible=schedules.filter(schedule=>!isAbsent(schedule)&&!isPending(schedule));
-      const promoterDayCounts=new Map();
-      eligible.forEach(schedule=>{
-        const promoter=schedule.promoter_id?`ID:${schedule.promoter_id}`:`NM:${rcNorm(schedule.promoter_fullname)}`;
-        const key=`${schedule.day}|${promoter}`;
-        promoterDayCounts.set(key,(promoterDayCounts.get(key)||0)+1);
-      });
       const reported=eligible.filter(schedule=>{
-        const store=rcNorm(schedule.store_code||schedule.pos);
-        const idExact=`${schedule.day}|ID:${schedule.promoter_id}|${store}`;
-        const nameExact=`${schedule.day}|NM:${rcNorm(schedule.promoter_fullname)}|${store}`;
-        if(exactReports.has(idExact)||exactReports.has(nameExact))return true;
-        const promoter=schedule.promoter_id?`ID:${schedule.promoter_id}`:`NM:${rcNorm(schedule.promoter_fullname)}`;
-        const promoterDay=`${schedule.day}|${promoter}`;
-        if((promoterDayCounts.get(promoterDay)||0)===1&&promoterDayReports.has(promoterDay))return true;
+        if((reportAssignments.assigned.get(schedule)||[]).length)return true;
+        const store=String(schedule.pos_id??'').trim()||rcNorm(schedule.store_code||schedule.pos);
         return isBackup(schedule)&&storeDayReports.has(`${schedule.day}|${store}`);
       }).length;
       record.reporting_compliance_total=eligible.length;
@@ -744,7 +735,7 @@ async function loadData(){
   try{
     const activeDate=homeToday();
     const [co,cl,br,st,sec,recs,ops,rtypes,activeRows]=await Promise.all([
-      operationsStartupGet('Companies',()=>sbGet('GI_company?select=id,name&active=eq.true&order=name')),
+      operationsStartupGet('Companies',()=>sbGet('GI_company?select=id,name&active=eq.true&order=id.asc')),
       operationsStartupGet('Clients',()=>sbGet('GI_clients?select=id,client&active=eq.true&order=client')),
       operationsStartupGet('Brands',()=>sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand')),
       operationsStartupGet('Stores',()=>sbGet('GI_stores?select=id,store&visible=eq.true&order=store')),
@@ -756,7 +747,7 @@ async function loadData(){
     ]);
     allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRT=rtypes||[]; allRec=recs||[]; selMap={};
     const activeRecords=activeRows||[];
-    const activeHomeRecords=activeRecords.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,activeRecords));
+    const activeHomeRecords=activeRecords.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,activeRecords)&&homeIsBiInsights(record));
     const pendingRecords=allRec.filter(record=>!record.validated_date);
     const autoConfirmIds=new Set(pendingRecords.map(record=>String(record.id)));
     const complianceTargetsById=new Map();
@@ -765,7 +756,7 @@ async function loadData(){
       complianceTargetsById.set(key,{...(complianceTargetsById.get(key)||{}),...record});
     });
     const complianceTargets=[...complianceTargetsById.values()];
-    await applyReportingCompliance(complianceTargets,{autoConfirm:true,autoConfirmIds,asOfDate:activeDate});
+    await applyReportingCompliance(complianceTargets,{autoConfirm:true,autoConfirmIds,asOfDate:complianceYesterday()});
     const complianceResults=new Map(complianceTargets.map(record=>[String(record.id),record]));
     const complianceFields=['reporting_compliance_total','reporting_compliance_reported','reporting_compliance_absent','reporting_compliance_backup','reporting_compliance_pct','reporting_compliant'];
     [...allRec,...activeRecords].forEach(record=>{
@@ -961,6 +952,7 @@ let workflowComplianceReady=false;
 let workflowCompliancePromise=null;
 let workflowComplianceTimer=null;
 const homeToday=()=>new Date().toISOString().slice(0,10);
+const homeIsBiInsights=record=>shortReportTypes(record).some(type=>String(type||'').trim().toLowerCase()==='bi insights');
 async function ensureWorkflowCompliance(){
   if(workflowComplianceReady)return;
   if(workflowCompliancePromise)return workflowCompliancePromise;
@@ -968,7 +960,7 @@ async function ensureWorkflowCompliance(){
   if(!targets.length){workflowComplianceReady=true;return;}
   const autoConfirmIds=new Set(targets.map(record=>String(record.id)));
   workflowCompliancePromise=(async()=>{
-    await applyReportingCompliance(targets,{autoConfirm:true,autoConfirmIds,asOfDate:homeToday()});
+    await applyReportingCompliance(targets,{autoConfirm:true,autoConfirmIds,asOfDate:complianceYesterday()});
     workflowComplianceReady=targets.every(record=>Number.isFinite(record.reporting_compliance_pct));
     if(view==='pending'||view==='all')applyFilter();
   })().catch(error=>console.error('Background workflow compliance failed',error)).finally(()=>{workflowCompliancePromise=null;});
@@ -1002,9 +994,9 @@ async function home_initIfNeeded(forceReload=false,prefetchedRows=null,complianc
   try{
     const today=homeToday();
     const rows=Array.isArray(prefetchedRows)?prefetchedRows:await sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${today}&enddate=gte.${today}&order=enddate.asc`);
-    home_campaigns=rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,rows));
+    home_campaigns=rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,rows)&&homeIsBiInsights(record));
     home_loading=false;home_complianceLoading=!complianceReady;home_render();
-    if(!complianceReady)await applyReportingCompliance(home_campaigns,{asOfDate:today});
+    if(!complianceReady)await applyReportingCompliance(home_campaigns,{asOfDate:complianceYesterday()});
   }catch(error){home_campaigns=[];home_error=operationsReadableError(error);}
   finally{
     home_loading=false;home_complianceLoading=false;
@@ -1090,7 +1082,7 @@ function home_renderCampaigns(){
 function home_render(){
   const status=document.getElementById('home_status');
   if(status){
-    status.textContent=home_loading?'Loading active campaigns…':home_error?home_error:home_complianceLoading?`${home_campaigns.length} active · calculating compliance…`:`${home_campaigns.length} active today`;
+    status.textContent=home_loading?'Loading active BI Insights campaigns…':home_error?home_error:home_complianceLoading?`${home_campaigns.length} active BI Insights · calculating compliance…`:`${home_campaigns.length} active BI Insights today`;
     status.style.color=home_error?'var(--red)':'var(--g500)';
   }
   const overall=home_compliance(home_campaigns);
@@ -1098,12 +1090,15 @@ function home_render(){
   const attention=home_campaigns.filter(record=>!Number.isFinite(record.reporting_compliance_pct)||Number(record.reporting_compliance_pct)<75).length;
   const kpis=document.getElementById('home_kpis');
   if(kpis)kpis.innerHTML=[
-    {value:home_campaigns.length,label:'Active campaigns',color:'var(--blue)'},
+    {value:home_campaigns.length,label:'Active BI Insights',color:'var(--blue)'},
     {value:overall.pct+'%',label:'Average compliance',color:home_complianceColor(overall.pct)},
     {value:compliant,label:'Compliant (75%+)',color:'var(--green)'},
     {value:attention,label:'Needs attention',color:'var(--red)'},
   ].map(kpi=>`<div class="home-kpi"><div class="home-kpi-value" style="color:${kpi.color};">${kpi.value}</div><div class="home-kpi-label">${kpi.label}</div></div>`).join('');
-  const agencyGroups=home_groupCompliance(home_campaigns,home_agencyNames);
+  const agencyIdByName=new Map(allCo.map(company=>[String(company.name||''),Number(company.id)]));
+  const agencyGroups=home_groupCompliance(home_campaigns,home_agencyNames).sort((a,b)=>
+    (agencyIdByName.get(a.name)??Number.MAX_SAFE_INTEGER)-(agencyIdByName.get(b.name)??Number.MAX_SAFE_INTEGER)
+    ||a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
   if(home_agencyFilter&&!agencyGroups.some(group=>group.name===home_agencyFilter))home_agencyFilter='';
   home_renderCampaigns();
   const sectorRows=home_agencyFilter?home_campaigns.filter(record=>home_agencyNames(record).includes(home_agencyFilter)):home_campaigns;
@@ -1111,6 +1106,8 @@ function home_render(){
   if(sectorContext)sectorContext.textContent=home_agencyFilter||'All agencies';
   home_renderCompliance('home_country',agencyGroups,true);
   home_renderCompliance('home_sector',home_groupCompliance(sectorRows,shortSectors));
+  const note=document.getElementById('home_compliance_note');
+  if(note){const [year,month,day]=complianceYesterday().split('-');note.textContent=`Home compliance includes BI Insights records only and is calculated through yesterday (${day}/${month}/${year}). Today and future shifts are excluded.`;}
 }
 
 function setView(v){
@@ -1969,6 +1966,37 @@ async function rc_pickTrackingRecord(id){
 const rcNorm=value=>String(value??'')
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
+function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,promoterNameField}){
+  const assigned=new Map(schedules.map(schedule=>[schedule,[]]));
+  const unresolved=new Map(schedules.map(schedule=>[schedule,[]]));
+  const samePromoterDay=(schedule,entry)=>{
+    if(String(schedule.day||'')!==String(entry[dateField]||''))return false;
+    const scheduleId=String(schedule.promoter_id??'').trim();
+    const entryId=String(entry[promoterIdField]??'').trim();
+    if(scheduleId&&entryId)return scheduleId===entryId;
+    return rcNorm(schedule.promoter_fullname)===rcNorm(entry[promoterNameField]);
+  };
+  entries.forEach(entry=>{
+    const candidates=schedules.filter(schedule=>samePromoterDay(schedule,entry));
+    if(!candidates.length)return;
+    if(candidates.length===1){assigned.get(candidates[0]).push(entry);return;}
+    const entryStore=rcNorm(entry.Store),entryBrand=rcNorm(entry.Brand);
+    const entryStoreId=String(entry.Storeid??'').trim(),entryBrandId=String(entry.Brandid??'').trim();
+    const scored=candidates.map(schedule=>{
+      const stores=[schedule.store_code,schedule.pos].map(rcNorm).filter(Boolean);
+      const scheduleStoreId=String(schedule.pos_id??'').trim(),scheduleBrandId=String(schedule.gi_brand_id??'').trim();
+      const storeIdComparable=!!entryStoreId&&!!scheduleStoreId,brandIdComparable=!!entryBrandId&&!!scheduleBrandId;
+      const score=(storeIdComparable?(entryStoreId===scheduleStoreId?16:-16):(entryStore&&stores.includes(entryStore)?4:0))
+        +(brandIdComparable?(entryBrandId===scheduleBrandId?8:-8):(entryBrand&&rcNorm(schedule.brand)===entryBrand?2:0));
+      return{schedule,score};
+    });
+    const bestScore=Math.max(...scored.map(item=>item.score));
+    const winners=scored.filter(item=>item.score===bestScore);
+    if(bestScore>0&&winners.length===1){assigned.get(winners[0].schedule).push(entry);return;}
+    winners.forEach(item=>unresolved.get(item.schedule).push(entry));
+  });
+  return{assigned,unresolved};
+}
 const rcTrackingIds=value=>{
   if(Array.isArray(value))return value.map(String).filter(Boolean);
   if(typeof value==='string')return value.replace(/[{}]/g,'').split(',').map(v=>v.trim()).filter(Boolean);
@@ -2083,7 +2111,7 @@ async function rc_load(){
 
   try{
     const [schedRows,trackingRows,reportTypeRows,storesWithSector] = await Promise.all([
-      sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,agency,brand,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}${selectedScheduleFilter}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`),
+      sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,agency,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}${selectedScheduleFilter}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`),
       sbGetAll(`InsightsTracking?select=*&enddate=gte.${RC_MIN_DATE}`),
       sbGet('report_types?select=id,type&order=type'),
       sbGet('GI_stores?select=id,store,Sector_id'),
@@ -2140,7 +2168,8 @@ async function rc_load(){
     const seen = new Set();
     const deduped = reportingSchedRows.filter(r => {
       if(EXCLUDED_ROLES.has(r.role)) return false;
-      const key = `${r.day}|${r.store_code}|${(r.promoter_fullname||'').toUpperCase().trim()}`;
+      const promoterKey=String(r.promoter_id??'').trim()||rcNorm(r.promoter_fullname);
+      const key=[r.day,promoterKey,String(r.pos_id??'').trim()||rcNorm(r.store_code||r.pos),String(r.gi_brand_id??'').trim()||rcNorm(r.brand),String(r.mission_id??'').trim(),rcNorm(r.campaign_sapcode),rcNorm(r.campaign_name)].join('|');
       if(seen.has(key)) return false;
       seen.add(key); return true;
     });
@@ -2195,51 +2224,19 @@ async function rc_load(){
     }
 
     const questRows = await sbGetAll(
-      `legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Brand,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`
+      `legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Storeid,Brand,Brandid,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`
     );
-    // Key by day|promoterid|store (primary), also by day|promotername|store (fallback)
-    const qMap = {};
-    questRows.forEach(q => {
-      const idKey   = `${q.Date}|${q.Promoterid}|${(q.Store||'').toUpperCase().trim()}`;
-      const nameKey = `${q.Date}|${(q.Promoter||'').toUpperCase().trim()}|${(q.Store||'').toUpperCase().trim()}`;
-      [idKey, nameKey].forEach(k => { if(!qMap[k]) qMap[k]=[]; qMap[k].push(q); });
-    });
 
     const salesRows = await sbGetAll(
-      `legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Brand&Date=gte.${from}&Date=lte.${to}`
+      `legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`
     );
     if(requestId!==rc_loadRequest)return;
-    const sMap = {};
-    salesRows.forEach(s => {
-      const idKey   = `${s.Date}|${s.Promoterid}|${(s.Store||'').toUpperCase().trim()}`;
-      const nameKey = `${s.Date}|${(s['Promoter Name']||'').toUpperCase().trim()}|${(s.Store||'').toUpperCase().trim()}`;
-      [idKey, nameKey].forEach(k => { if(!sMap[k]) sMap[k]=[]; sMap[k].push(s); });
-    });
+    const qAssignment=rcAssignReportedEntries(eligibleSchedules,questRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter'});
+    const sAssignment=rcAssignReportedEntries(eligibleSchedules,salesRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter Name'});
 
     rc_data = eligibleSchedules.map(r => {
-      const storeCode = (r.store_code||'').toUpperCase().trim();
-      // Primary: match by promoter_id + store
-      const idKey     = `${r.day}|${r.promoter_id}|${storeCode}`;
-      // Fallback: match by name + store
-      const nameKey   = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|${storeCode}`;
-
-      let qEntries = qMap[idKey] || qMap[nameKey] || [];
-      let sEntries = sMap[idKey] || sMap[nameKey] || [];
-
-      // If still empty and promoter has only one shift that day, grab all entries for that promoter
-      const schedCount = eligibleSchedules.filter(x => x.day===r.day && x.promoter_id===r.promoter_id).length;
-      if(!qEntries.length && schedCount === 1){
-        const allQId   = `${r.day}|${r.promoter_id}|`;
-        const allQName = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|`;
-        qEntries = Object.entries(qMap).filter(([k])=>k.startsWith(allQId)||k.startsWith(allQName)).flatMap(([,v])=>v);
-        qEntries = [...new Map(qEntries.map(e=>[e.ID,e])).values()];
-      }
-      if(!sEntries.length && schedCount === 1){
-        const allSId   = `${r.day}|${r.promoter_id}|`;
-        const allSName = `${r.day}|${(r.promoter_fullname||'').toUpperCase().trim()}|`;
-        sEntries = Object.entries(sMap).filter(([k])=>k.startsWith(allSId)||k.startsWith(allSName)).flatMap(([,v])=>v);
-        sEntries = [...new Map(sEntries.map(e=>[e.id,e])).values()];
-      }
+      const qEntries=qAssignment.assigned.get(r)||[];
+      const sEntries=sAssignment.assigned.get(r)||[];
 
       const hasQ = qEntries.length > 0;
       const hasS = sEntries.length > 0;
