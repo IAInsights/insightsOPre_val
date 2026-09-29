@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reporting Compliance &amp; Validation Hub</title>
+<title>Reporting Tracking &amp; Validation</title>
 <link rel="icon" type="image/png" sizes="64x64" href="operations-favicon.png?v=operations-check-1">
 <link rel="shortcut icon" type="image/png" href="operations-favicon.png?v=operations-check-1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -385,7 +385,7 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 <body>
 
 <div class="header">
-  <h1>Reporting Compliance &amp; Validation Hub</h1>
+  <h1>Reporting Tracking &amp; Validation</h1>
   <button class="tab-btn active" id="hdr-tab-home" onclick="setView('home')">Home</button>
   <button class="tab-btn"        id="hdr-tab-rc"      onclick="setView('rc')">Reporting Check</button>
   <button class="tab-btn"        id="hdr-tab-pending" onclick="setView('pending')">Reports Validation</button>
@@ -393,15 +393,15 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.09.23.6</summary>
+      <summary title="Open version history">V2026.09.29.5</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.09.23.6</div>
+        <div class="release-heading">New version V2026.09.29.5</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>The Agency panel now fits its rows without empty white space or a scrollbar.</li>
-          <li>The Sector panel matches the Agency panel height and keeps its own scrollbar.</li>
-          <li>Active BI Insights campaigns use the extra vertical space.</li>
-          <li>Home compliance remains BI Insights only and is calculated through yesterday.</li>
+          <li>Non-multibrand fallback now requires a matching store or actual brand reference.</li>
+          <li>A report with both an unrelated store and brand no longer fills the scheduled shift.</li>
+          <li>Client ID alone can no longer connect reports from unrelated brands and stores.</li>
+          <li>Multibrand same-sector daily work blocks remain supported.</li>
         </ul>
       </div>
     </details>
@@ -737,8 +737,8 @@ async function loadData(){
     const [co,cl,br,st,sec,recs,ops,rtypes,activeRows]=await Promise.all([
       operationsStartupGet('Companies',()=>sbGet('GI_company?select=id,name&active=eq.true&order=id.asc')),
       operationsStartupGet('Clients',()=>sbGet('GI_clients?select=id,client&active=eq.true&order=client')),
-      operationsStartupGet('Brands',()=>sbGet('GI_brands?select=id,brand&visible=eq.true&order=brand')),
-      operationsStartupGet('Stores',()=>sbGet('GI_stores?select=id,store&visible=eq.true&order=store')),
+      operationsStartupGet('Brands',()=>sbGet('GI_brands?select=id,brand,client_giid&order=brand')),
+      operationsStartupGet('Stores',()=>sbGet('GI_stores?select=id,store,Sector_id&visible=eq.true&order=store')),
       operationsStartupGet('Sectors',()=>sbGet('Sector?select=id,Name,companyid&order=Name')),
       operationsStartupGet('Insights Tracking records',()=>sbGet('InsightsTracking?select=*&under_review_date=not.is.null&order=under_review_date.desc'),{required:true}),
       operationsStartupGet('Operations contacts',()=>sbGet('Contacts_Operations?select=id,firstname,lastname,company,jobtitle&order=lastname')),
@@ -1985,9 +1985,25 @@ async function rc_pickTrackingRecord(id){
 const rcNorm=value=>String(value??'')
   .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
-function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,promoterNameField}){
+const RC_REPORTING_BRAND_ID_ALIASES=new Map([
+  ['896',new Set(['216'])], // RITTER in schedules -> Ritter Sport in reporting
+]);
+const rcIsMultibrandSchedule=(schedule,reference=null)=>{
+  const label=rcNorm(`${schedule?.brand||''} ${reference?.brand||''}`);
+  return label.includes('MULTIMARQUE')||label.includes('MULTIBRAND')||label.startsWith('MB ');
+};
+function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,promoterNameField,storeRows=allSt}){
   const assigned=new Map(schedules.map(schedule=>[schedule,[]]));
   const unresolved=new Map(schedules.map(schedule=>[schedule,[]]));
+  const pending=[];
+  const assignEntry=(schedule,entry,referenceMismatch=false)=>assigned.get(schedule).push(referenceMismatch?{...entry,__rcReferenceMismatch:true}:entry);
+  const brandReference=(id,name)=>{
+    const idValue=String(id??'').trim();
+    if(idValue){const byId=allBr.find(brand=>String(brand.id)===idValue);if(byId)return byId;}
+    const nameValue=rcNorm(name);
+    return nameValue?allBr.find(brand=>rcNorm(brand.brand)===nameValue)||null:null;
+  };
+  const storeSectorById=new Map((storeRows||[]).filter(store=>store.id!=null&&store.Sector_id!=null).map(store=>[String(store.id),String(store.Sector_id)]));
   const samePromoterDay=(schedule,entry)=>{
     if(String(schedule.day||'')!==String(entry[dateField]||''))return false;
     const scheduleId=String(schedule.promoter_id??'').trim();
@@ -1998,23 +2014,80 @@ function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,pr
   entries.forEach(entry=>{
     const candidates=schedules.filter(schedule=>samePromoterDay(schedule,entry));
     if(!candidates.length)return;
-    if(candidates.length===1){assigned.get(candidates[0]).push(entry);return;}
     const entryStore=rcNorm(entry.Store),entryBrand=rcNorm(entry.Brand);
     const entryStoreId=String(entry.Storeid??'').trim(),entryBrandId=String(entry.Brandid??'').trim();
+    const entryBrandReference=brandReference(entryBrandId,entry.Brand);
     const scored=candidates.map(schedule=>{
       const stores=[schedule.store_code,schedule.pos].map(rcNorm).filter(Boolean);
       const scheduleStoreId=String(schedule.pos_id??'').trim(),scheduleBrandId=String(schedule.gi_brand_id??'').trim();
       const storeIdComparable=!!entryStoreId&&!!scheduleStoreId,brandIdComparable=!!entryBrandId&&!!scheduleBrandId;
-      const score=(storeIdComparable?(entryStoreId===scheduleStoreId?16:-16):(entryStore&&stores.includes(entryStore)?4:0))
-        +(brandIdComparable?(entryBrandId===scheduleBrandId?8:-8):(entryBrand&&rcNorm(schedule.brand)===entryBrand?2:0));
-      return{schedule,score};
+      const storeNameComparable=!!entryStore&&!!stores.length;
+      const exactStoreId=storeIdComparable&&entryStoreId===scheduleStoreId;
+      const storeNameMatch=storeNameComparable&&stores.includes(entryStore);
+      const sameSector=!!storeSectorById.get(entryStoreId)&&storeSectorById.get(entryStoreId)===storeSectorById.get(scheduleStoreId);
+      const scheduleBrandReference=brandReference(scheduleBrandId,schedule.brand);
+      const multibrandBlock=rcIsMultibrandSchedule(schedule,scheduleBrandReference);
+      const sectorStoreMatch=multibrandBlock&&sameSector;
+      const storeMatches=storeIdComparable?(exactStoreId||sectorStoreMatch):(!storeNameComparable||storeNameMatch||sectorStoreMatch);
+      const exactBrandId=brandIdComparable&&entryBrandId===scheduleBrandId;
+      const aliasBrandId=brandIdComparable&&!!RC_REPORTING_BRAND_ID_ALIASES.get(scheduleBrandId)?.has(entryBrandId);
+      const sameClient=!!scheduleBrandReference?.client_giid&&!!entryBrandReference?.client_giid
+        &&String(scheduleBrandReference.client_giid)===String(entryBrandReference.client_giid);
+      const multibrandMatch=multibrandBlock&&sameClient;
+      const multibrandDayMatch=multibrandBlock&&sameSector;
+      const brandNameComparable=!!entryBrand&&!!rcNorm(schedule.brand);
+      const brandNameMatch=brandNameComparable&&entryBrand===rcNorm(schedule.brand);
+      const brandMatches=brandIdComparable?(exactBrandId||aliasBrandId||multibrandMatch||multibrandDayMatch):(!brandNameComparable||brandNameMatch||multibrandMatch||multibrandDayMatch);
+      const brandReferenceMatch=exactBrandId||aliasBrandId||brandNameMatch;
+      const fallbackEligible=multibrandBlock?sameSector:(exactStoreId||storeNameMatch||brandReferenceMatch);
+      if(!storeMatches||!brandMatches)return{schedule,score:-1,valid:false,fallbackEligible};
+      const score=1+(exactStoreId?32:sectorStoreMatch?20:storeNameMatch?8:0)+(exactBrandId?16:aliasBrandId?14:multibrandMatch?12:brandNameMatch?4:multibrandDayMatch?3:0);
+      const referenceMismatch=multibrandDayMatch&&(!exactStoreId||!(exactBrandId||aliasBrandId||multibrandMatch));
+      return{schedule,score,valid:true,referenceMismatch,fallbackEligible:true};
     });
-    const bestScore=Math.max(...scored.map(item=>item.score));
-    const winners=scored.filter(item=>item.score===bestScore);
-    if(bestScore>0&&winners.length===1){assigned.get(winners[0].schedule).push(entry);return;}
-    winners.forEach(item=>unresolved.get(item.schedule).push(entry));
+    const valid=scored.filter(item=>item.valid);
+    if(!valid.length){
+      const fallbackCandidates=scored.filter(item=>item.fallbackEligible).map(item=>item.schedule);
+      if(fallbackCandidates.length)pending.push({entry,candidates:fallbackCandidates});
+      else candidates.forEach(schedule=>unresolved.get(schedule).push(entry));
+      return;
+    }
+    const bestScore=Math.max(...valid.map(item=>item.score));
+    const winners=valid.filter(item=>item.score===bestScore);
+    if(bestScore>0&&winners.length===1){assignEntry(winners[0].schedule,entry,winners[0].referenceMismatch);return;}
+    pending.push({entry,candidates:winners.map(item=>item.schedule)});
+  });
+  pending.forEach(({entry,candidates})=>{
+    const available=candidates.filter(schedule=>!(assigned.get(schedule)||[]).length);
+    if(available.length===1){assignEntry(available[0],entry,true);return;}
+    candidates.forEach(schedule=>unresolved.get(schedule).push(entry));
   });
   return{assigned,unresolved};
+}
+function rcReportedBrandLines(qEntries,sEntries){
+  const groups=new Map();
+  const add=(entry,type)=>{
+    const brandId=String(entry.Brandid??'').trim();
+    const brand=String(entry.Brand||'Unspecified brand').trim()||'Unspecified brand';
+    const key=brandId||rcNorm(brand)||'UNSPECIFIED';
+    if(!groups.has(key))groups.set(key,{brandId,brand,qEntries:[],sEntries:[],stores:new Set(),referenceMismatch:false});
+    const group=groups.get(key);
+    group[type].push(entry);
+    if(entry.Store)group.stores.add(entry.Store);
+    if(entry.__rcReferenceMismatch)group.referenceMismatch=true;
+  };
+  qEntries.forEach(entry=>add(entry,'qEntries'));
+  sEntries.forEach(entry=>add(entry,'sEntries'));
+  return [...groups.values()].map(group=>({
+    brandId:group.brandId,
+    brand:group.brand,
+    stores:[...group.stores],
+    hasQ:group.qEntries.length>0,
+    hasS:group.sEntries.length>0,
+    pieces:group.qEntries.reduce((sum,entry)=>sum+(Number(entry['Pieces Sold'])||0),0),
+    turnover:group.qEntries.reduce((sum,entry)=>sum+(Number(entry['Turnover of the day'])||0),0),
+    referenceMismatch:group.referenceMismatch,
+  })).sort((left,right)=>left.brand.localeCompare(right.brand,undefined,{numeric:true,sensitivity:'base'}));
 }
 const rcTrackingIds=value=>{
   if(Array.isArray(value))return value.map(String).filter(Boolean);
@@ -2250,8 +2323,8 @@ async function rc_load(){
       `legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`
     );
     if(requestId!==rc_loadRequest)return;
-    const qAssignment=rcAssignReportedEntries(eligibleSchedules,questRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter'});
-    const sAssignment=rcAssignReportedEntries(eligibleSchedules,salesRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter Name'});
+    const qAssignment=rcAssignReportedEntries(eligibleSchedules,questRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter',storeRows:storesWithSector});
+    const sAssignment=rcAssignReportedEntries(eligibleSchedules,salesRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter Name',storeRows:storesWithSector});
 
     rc_data = eligibleSchedules.map(r => {
       const qEntries=qAssignment.assigned.get(r)||[];
@@ -2263,6 +2336,9 @@ async function rc_load(){
 
       const reportedStores = [...new Set([...qEntries.map(e=>e.Store), ...sEntries.map(e=>e.Store)].filter(Boolean))];
       const reportedBrands = [...new Set([...qEntries.map(e=>e.Brand), ...sEntries.map(e=>e.Brand)].filter(Boolean))];
+      const referenceMismatch=[...qEntries,...sEntries].some(entry=>entry.__rcReferenceMismatch);
+      const reportBreakdown=rcReportedBrandLines(qEntries,sEntries);
+      const isMultibrandBlock=rcIsMultibrandSchedule(r);
 
       const pieces   = qEntries.reduce((sum,e)=> sum + (Number(e['Pieces Sold'])||0), 0);
       const turnover = qEntries.reduce((sum,e)=> sum + (Number(e['Turnover of the day'])||0), 0);
@@ -2297,7 +2373,7 @@ async function rc_load(){
         reportTypes: rcTrackingIds(tracking?.report_type_ids).map(id=>reportTypeById.get(id)||`Type ${id}`),
         missionId: r.mission_id,
         agency: r.agency,
-        hasQ, hasS,
+        hasQ, hasS, referenceMismatch, reportBreakdown, isMultibrandBlock,
         reportedStores, reportedBrands,
         pieces: (hasQ ? pieces : null),
         turnover: (hasQ ? turnover : null),
@@ -3255,6 +3331,7 @@ function rc_render(){
       ? `<span style="color:var(--amber);font-weight:600;" title="${txt} \u2014 differs from scheduled: ${sched||'\u2014'}">${txt} \u26a0\ufe0f</span>`
       : `<span title="${txt}">${txt}</span>`;
   };
+  const brandStack=(items,renderer,align='left')=>items.map((item,index)=>`<div style="min-height:28px;padding:4px 0;display:flex;align-items:center;justify-content:${align==='right'?'flex-end':align==='center'?'center':'flex-start'};${index<items.length-1?'border-bottom:1px solid var(--g100);':''}">${renderer(item)}</div>`).join('');
 
   let html = `<table style="width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px;">
     <colgroup>
@@ -3295,8 +3372,16 @@ function rc_render(){
       const promoterParts  = String(r.promoter || '').trim().split(/\s+/).filter(Boolean);
       const promoterFirst  = promoterParts.shift() || '—';
       const promoterLast   = promoterParts.join(' ');
-      const statusCell     = (isAbsent || isAbsentBackup) ? `<span style="color:var(--g300);">—</span>` : badge(r.status);
+      const statusCell     = (isAbsent || isAbsentBackup) ? `<span style="color:var(--g300);">—</span>` : `${badge(r.status)}${r.referenceMismatch?'<div style="margin-top:4px;color:var(--amber);font-size:9px;font-weight:700;line-height:1.15;">⚠ Reference mismatch</div>':''}`;
       const displaySap     = r.campaignSapCode || r.trackingSapCode;
+      const brandLines     = r.isMultibrandBlock&&r.reportBreakdown?.length>1?r.reportBreakdown:[];
+      const splitBrands    = brandLines.length>1;
+      const questionnaireCell=splitBrands?brandStack(brandLines,line=>check(line.hasQ,r.status==='not_due'),'center'):check(r.hasQ,r.status==='not_due');
+      const salesCell=splitBrands?brandStack(brandLines,line=>check(line.hasS,r.status==='not_due'),'center'):check(r.hasS,r.status==='not_due');
+      const reportedStoreCell=splitBrands?brandStack(brandLines,line=>`<span style="${line.referenceMismatch?'color:var(--amber);font-weight:600;':''}">${esc(line.stores.join(', ')||'—')}${line.referenceMismatch?' ⚠️':''}</span>`):mismatchTag(r.schedStoreCode,r.reportedStores);
+      const reportedBrandCell=splitBrands?brandStack(brandLines,line=>`<span><strong>${esc(line.brand)}</strong>${line.brandId?`<small style="display:block;color:var(--g400);font-family:monospace;">ID ${esc(line.brandId)}</small>`:''}</span>`):mismatchTag(r.schedBrand,r.reportedBrands);
+      const piecesCell=splitBrands?brandStack(brandLines,line=>line.hasQ?Number(line.pieces).toLocaleString():'—','right'):(r.pieces!=null?r.pieces.toLocaleString():'—');
+      const turnoverCell=splitBrands?brandStack(brandLines,line=>line.hasQ?Number(line.turnover).toLocaleString(undefined,{maximumFractionDigits:0}):'—','right'):(r.turnover!=null?r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}):'—');
 
       html += `<tr style="border-bottom:1px solid var(--g100);height:70px;" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
         <td style="padding:9px 8px;vertical-align:middle;overflow-wrap:anywhere;">
@@ -3322,13 +3407,14 @@ function rc_render(){
           ${displaySap
             ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${displaySap}</div>`
             : ''}
+          ${splitBrands?`<div style="display:inline-flex;margin-top:4px;padding:2px 6px;border-radius:10px;background:var(--blue-light);color:var(--blue);font-size:9px;font-weight:700;">${brandLines.length} reported brands</div>`:''}
         </td>
-        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasQ,r.status==='not_due')}</td>
-        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${check(r.hasS,r.status==='not_due')}</td>
-        <td style="padding:9px 6px;font-family:monospace;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${mismatchTag(r.schedStoreCode, r.reportedStores)}</td>
-        <td style="padding:9px 6px;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${mismatchTag(r.schedBrand, r.reportedBrands)}</td>
-        <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;white-space:nowrap;vertical-align:middle;">${r.pieces!=null ? r.pieces.toLocaleString() : '\u2014'}</td>
-        <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;font-weight:700;white-space:nowrap;vertical-align:middle;">${r.turnover!=null ? r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}) : '\u2014'}</td>
+        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${questionnaireCell}</td>
+        <td style="padding:9px 4px;text-align:center;vertical-align:middle;">${salesCell}</td>
+        <td style="padding:9px 6px;font-family:monospace;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${reportedStoreCell}</td>
+        <td style="padding:9px 6px;font-size:10px;white-space:normal;line-height:1.2;vertical-align:middle;overflow-wrap:anywhere;">${reportedBrandCell}</td>
+        <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;white-space:nowrap;vertical-align:middle;">${piecesCell}</td>
+        <td style="padding:9px 5px;text-align:right;font-family:monospace;font-size:10.5px;font-weight:700;white-space:nowrap;vertical-align:middle;">${turnoverCell}</td>
         <td style="padding:9px 6px;white-space:normal;vertical-align:middle;overflow:visible;">${statusCell}</td>
       </tr>`;
     });
