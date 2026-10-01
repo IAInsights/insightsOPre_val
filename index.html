@@ -253,9 +253,6 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .home-date:focus{border-color:var(--blue);}
 .home-status{font-size:11px;color:var(--g500);min-width:90px;text-align:right;}
 .home-kpis{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px;}
-.home-kpi{background:#fff;border:1px solid var(--g200);border-radius:8px;padding:9px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
-.home-kpi-value{font-family:monospace;font-size:20px;font-weight:800;line-height:1.05;}
-.home-kpi-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:2px;}
 .home-kpi{background:#fff;border:1px solid var(--g200);border-radius:8px;min-height:76px;padding:13px 17px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .home-kpi-value{font-family:monospace;font-size:28px;font-weight:800;line-height:1.05;}
 .home-kpi-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:3px;}
@@ -280,8 +277,6 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .home-bar{height:7px;border-radius:10px;background:var(--g100);overflow:hidden;}
 .home-bar span{display:block;height:100%;border-radius:10px;}
 .home-compliance-pct{font-family:monospace;font-weight:800;text-align:right;}
-.home-bottom{display:flex;flex:1;min-height:300px;}
-.home-bottom .home-panel{display:flex;flex:1;min-height:0;flex-direction:column;}
 .home-bottom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start;min-height:0;}
 .home-bottom .home-panel{display:flex;min-height:0;flex-direction:column;}
 .home-pending-list{display:flex;flex:1;min-height:250px;max-height:none;flex-direction:column;overflow-y:auto;}
@@ -405,15 +400,11 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.10.01.2</summary>
       <summary title="Open version history">V2026.10.01.4</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.10.01.2</div>
         <div class="release-heading">New version V2026.10.01.4</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>Closing Soon now excludes records whose only report type is No reporting.</li>
-          <li>Other reporting views and their filters are unchanged.</li>
           <li>Reports to Validate and Closing Soon agency counts now appear as compact lists instead of cards.</li>
           <li>Counts and agency ordering remain unchanged.</li>
         </ul>
@@ -447,8 +438,6 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
     </div>
     <div class="home-bottom">
       <section class="home-panel">
-        <div class="home-panel-head"><h3>Active BI Insights Campaigns &amp; Compliance</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 active</span></div></div>
-        <div id="home_pending" class="home-pending-list"></div>
         <div class="home-panel-head"><h3>Reports to Validate by Agency</h3></div>
         <ul id="home_validation_agencies" class="home-agency-counts"></ul>
       </section>
@@ -1012,7 +1001,6 @@ async function home_initIfNeeded(forceReload=false,prefetchedRows=null,complianc
   const cacheFresh=home_initialized&&home_loadedAt&&(Date.now()-home_loadedAt)<HOME_CACHE_MS;
   if(cacheFresh&&!forceReload){home_render();return;}
   home_setTravelLoader(true);
-  home_initialized=true;home_loading=true;home_complianceLoading=false;home_error='';home_render();
   home_initialized=true;home_loading=true;home_complianceLoading=false;home_error='';home_closingError='';home_closingRows=[];home_render();
   try{
     const today=homeToday();
@@ -1158,7 +1146,6 @@ function home_render(){
     (agencyIdByName.get(a.name)??Number.MAX_SAFE_INTEGER)-(agencyIdByName.get(b.name)??Number.MAX_SAFE_INTEGER)
     ||a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
   if(home_agencyFilter&&!agencyGroups.some(group=>group.name===home_agencyFilter))home_agencyFilter='';
-  home_renderCampaigns();
   home_renderAgencyCounts();
   const sectorRows=home_agencyFilter?home_campaigns.filter(record=>home_agencyNames(record).includes(home_agencyFilter)):home_campaigns;
   const sectorContext=document.getElementById('home_sector_context');
@@ -1711,7 +1698,6 @@ async function oc_load(){
         oc_schemaReady=false;
       }
     }
-    oc_rows=oc_rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!record.first_report_date&&!record.email_sent_date&&!rcIsNoReporting(record));
     oc_rows=oc_rows.filter(ocIsClosingCandidate);
     await applyReportingCompliance(oc_rows,{autoConfirm:true});
     if(!oc_rows.some(record=>String(record.id)===String(oc_selectedId)))oc_selectedId=oc_rows[0]?.id??null;
