@@ -256,6 +256,15 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .home-kpi{background:#fff;border:1px solid var(--g200);border-radius:8px;padding:9px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .home-kpi-value{font-family:monospace;font-size:20px;font-weight:800;line-height:1.05;}
 .home-kpi-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:2px;}
+.home-kpi{background:#fff;border:1px solid var(--g200);border-radius:8px;min-height:76px;padding:13px 17px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.home-kpi-value{font-family:monospace;font-size:28px;font-weight:800;line-height:1.05;}
+.home-kpi-label{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--g500);margin-top:3px;}
+.home-agency-counts{list-style:none;margin:0;padding:0;}
+.home-agency-count-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px;padding:7px 12px;border-bottom:1px solid var(--g100);}
+.home-agency-count-row:last-child{border-bottom:0;}
+.home-agency-count-name{min-width:0;font-size:12px;font-weight:700;color:var(--g600);overflow-wrap:anywhere;}
+.home-agency-count-value{flex:none;font-family:monospace;font-size:15px;font-weight:800;line-height:1;color:var(--blue);}
+#home_closing_agencies .home-agency-count-value{color:var(--amber);}
 .home-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;align-items:stretch;}
 .home-panel{background:#fff;border:1px solid var(--g200);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden;min-width:0;}
 .home-grid .home-panel{display:flex;min-height:0;flex-direction:column;}
@@ -273,6 +282,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--g900);background:
 .home-compliance-pct{font-family:monospace;font-weight:800;text-align:right;}
 .home-bottom{display:flex;flex:1;min-height:300px;}
 .home-bottom .home-panel{display:flex;flex:1;min-height:0;flex-direction:column;}
+.home-bottom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start;min-height:0;}
+.home-bottom .home-panel{display:flex;min-height:0;flex-direction:column;}
 .home-pending-list{display:flex;flex:1;min-height:250px;max-height:none;flex-direction:column;overflow-y:auto;}
 .home-compliance-note{padding:8px 11px;border:1px solid var(--g200);border-radius:7px;background:#fff;color:var(--g500);font-size:10.5px;line-height:1.4;text-align:center;}
 .home-pending-row{display:grid;grid-template-columns:minmax(250px,1.7fr) minmax(160px,.8fr) 155px 160px;gap:10px;padding:6px 10px;border-bottom:1px solid var(--g200);border-left:3px solid transparent;align-items:center;background:#fff;transition:background .15s,border-color .15s;}
@@ -380,6 +391,7 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
 #rc_stats{padding:10px 16px!important;background:var(--g50)!important;border-bottom:1px solid var(--g200)!important}#rc_kpis{display:grid!important;grid-template-columns:repeat(9,minmax(88px,1fr));gap:8px!important;align-items:stretch;width:100%}.rc-kpi{min-width:0;padding:8px 10px;border:1px solid var(--g200)!important;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)!important}.rc-kpi:hover{transform:translateY(-1px);border-color:var(--kpi-color)!important}.rc-kpi.active{border-color:var(--kpi-color)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--kpi-color) 18%,transparent)!important}.rc-kpi span:first-child{font-size:18px!important}.rc-kpi span:last-child{font-size:9px!important}#rc_area{border:1.5px solid var(--g300)!important;border-radius:8px!important;box-shadow:0 2px 7px rgba(0,0,0,.07)!important}#rc_area tbody td{border-bottom:1px solid var(--g100)}#rc_area tbody tr:nth-child(even){background:var(--g50)}#rc_area tbody tr:hover{background:var(--blue-light)!important}
 @media(max-width:1100px){.home-pending-row{grid-template-columns:minmax(0,1fr) 155px}.home-pending-tags,.home-campaign-range{display:none}#rc_kpis{grid-template-columns:repeat(3,minmax(100px,1fr))}}
 @media(max-width:1050px){.oc-body{grid-template-columns:1fr;overflow:auto}.oc-list{min-height:420px}.oc-detail{min-height:420px}}
+.oc-ref-link{color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer}.oc-ref-link:hover{color:var(--blue-dark)}
 </style>
 </head>
 <body>
@@ -393,15 +405,17 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.09.29.5</summary>
+      <summary title="Open version history">V2026.10.01.2</summary>
+      <summary title="Open version history">V2026.10.01.4</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.09.29.5</div>
+        <div class="release-heading">New version V2026.10.01.2</div>
+        <div class="release-heading">New version V2026.10.01.4</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>Non-multibrand fallback now requires a matching store or actual brand reference.</li>
-          <li>A report with both an unrelated store and brand no longer fills the scheduled shift.</li>
-          <li>Client ID alone can no longer connect reports from unrelated brands and stores.</li>
-          <li>Multibrand same-sector daily work blocks remain supported.</li>
+          <li>Closing Soon now excludes records whose only report type is No reporting.</li>
+          <li>Other reporting views and their filters are unchanged.</li>
+          <li>Reports to Validate and Closing Soon agency counts now appear as compact lists instead of cards.</li>
+          <li>Counts and agency ordering remain unchanged.</li>
         </ul>
       </div>
     </details>
@@ -435,6 +449,12 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
       <section class="home-panel">
         <div class="home-panel-head"><h3>Active BI Insights Campaigns &amp; Compliance</h3><div class="home-pending-tools"><span id="home_pending_count" class="home-pending-count">0 active</span></div></div>
         <div id="home_pending" class="home-pending-list"></div>
+        <div class="home-panel-head"><h3>Reports to Validate by Agency</h3></div>
+        <ul id="home_validation_agencies" class="home-agency-counts"></ul>
+      </section>
+      <section class="home-panel">
+        <div class="home-panel-head"><h3>Closing Soon by Agency</h3></div>
+        <ul id="home_closing_agencies" class="home-agency-counts"></ul>
       </section>
     </div>
     <div id="home_compliance_note" class="home-compliance-note">Home compliance includes BI Insights records only and is calculated through yesterday. Today and future shifts are excluded.</div>
@@ -944,6 +964,8 @@ let home_complianceLoading=false;
 let home_error='';
 let home_agencyFilter='';
 let home_campaigns=[];
+let home_closingRows=[];
+let home_closingError='';
 let home_initialized=false;
 let home_loaderHideTimer=null;
 let home_loadedAt=0;
@@ -991,10 +1013,14 @@ async function home_initIfNeeded(forceReload=false,prefetchedRows=null,complianc
   if(cacheFresh&&!forceReload){home_render();return;}
   home_setTravelLoader(true);
   home_initialized=true;home_loading=true;home_complianceLoading=false;home_error='';home_render();
+  home_initialized=true;home_loading=true;home_complianceLoading=false;home_error='';home_closingError='';home_closingRows=[];home_render();
   try{
     const today=homeToday();
+    const closingPromise=sbGetAll(`InsightsTracking?select=id,company_ids,report_type_ids,enddate,cancelled_date,not_sent_date,first_report_date,email_sent_date&enddate=gte.${ocToday()}&enddate=lte.${ocPlusDays(5)}&order=enddate.asc`)
+      .then(rows=>{home_closingRows=rows.filter(ocIsClosingCandidate);},error=>{home_closingError=operationsReadableError(error);});
     const rows=Array.isArray(prefetchedRows)?prefetchedRows:await sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${today}&enddate=gte.${today}&order=enddate.asc`);
     home_campaigns=rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,rows)&&homeIsBiInsights(record));
+    await closingPromise;
     home_loading=false;home_complianceLoading=!complianceReady;home_render();
     if(!complianceReady)await applyReportingCompliance(home_campaigns,{asOfDate:complianceYesterday()});
   }catch(error){home_campaigns=[];home_error=operationsReadableError(error);}
@@ -1050,6 +1076,20 @@ function home_selectAgency(agency){
 function home_agencyNames(record){
   const names=resolveIds(record?.company_ids,allCo,'name').filter(Boolean);
   return names.length?names:['No value'];
+}
+function home_renderAgencyCounts(){
+  const agencies=allCo.filter(company=>company.name).slice().sort((a,b)=>Number(a.id)-Number(b.id));
+  const render=(targetId,records,error='')=>{
+    const target=document.getElementById(targetId);
+    if(!target)return;
+    if(home_loading){target.innerHTML='<li class="empty">Loading…</li>';return;}
+    if(error){target.innerHTML='<li class="empty">Could not load agency counts.</li>';return;}
+    const counts=new Map(agencies.map(company=>[String(company.name),0]));
+    records.forEach(record=>new Set(home_agencyNames(record)).forEach(name=>counts.set(name,(counts.get(name)||0)+1)));
+    target.innerHTML=[...counts].map(([name,count])=>`<li class="home-agency-count-row"><span class="home-agency-count-name">${esc(name)}</span><span class="home-agency-count-value">${count}</span></li>`).join('');
+  };
+  render('home_validation_agencies',allRec.filter(record=>!record.validated_date&&!record.first_report_date));
+  render('home_closing_agencies',home_closingRows,home_closingError);
 }
 function home_renderCampaigns(){
   const target=document.getElementById('home_pending');
@@ -1119,6 +1159,7 @@ function home_render(){
     ||a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
   if(home_agencyFilter&&!agencyGroups.some(group=>group.name===home_agencyFilter))home_agencyFilter='';
   home_renderCampaigns();
+  home_renderAgencyCounts();
   const sectorRows=home_agencyFilter?home_campaigns.filter(record=>home_agencyNames(record).includes(home_agencyFilter)):home_campaigns;
   const sectorContext=document.getElementById('home_sector_context');
   if(sectorContext)sectorContext.textContent=home_agencyFilter||'All agencies';
@@ -1284,7 +1325,7 @@ function mainWorkflowDetail(record){
   }else{
     action=`<div class="oc-state ok">✓ Validated by ${esc(record.validated_by||'—')}</div>${isSent?`<div style="margin-top:8px;padding:9px;border-radius:7px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;text-align:center;">Final report was sent · ${fd(record.email_sent_date||record.first_report_date)||'—'}</div>`:`<button class="btn-unvalidate" onclick="doUnvalidate(${record.id})" style="width:100%;margin-top:8px;">Undo validation</button>`}`;
   }
-  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${esc(missions)} · SAP ${esc(record.sapcode||'—')} · ${esc(reportTypes)}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:`<div class="oc-meta">${esc(pbiName)} · No Power BI link set.</div>`}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
+  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${ocMissionLinks(record)} · SAP ${ocSapLink(record.sapcode)} · ${esc(reportTypes)}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:`<div class="oc-meta">${esc(pbiName)} · No Power BI link set.</div>`}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
 }
 function renderCards(rows){
   const body=document.getElementById('body');
@@ -1296,10 +1337,10 @@ function renderCards(rows){
   if(!rows.some(record=>String(record.id)===String(mainWorkflowSelected[view])))mainWorkflowSelected[view]=rows[0].id;
   const selected=rows.find(record=>String(record.id)===String(mainWorkflowSelected[view]))||rows[0];
   if(view==='all'){
-    body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:82px"><col style="width:220px"><col style="width:95px"><col style="width:125px"><col style="width:125px"><col style="width:150px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),sent=!!(record.email_sent_date||record.first_report_date),status=sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI',missions=rcMissionIds(record).join(', ')||'—',reportTypes=shortReportTypes(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:var(--green-light);color:var(--green);">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${esc(missions)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
+    body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:82px"><col style="width:220px"><col style="width:95px"><col style="width:125px"><col style="width:125px"><col style="width:150px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),sent=!!(record.email_sent_date||record.first_report_date),status=sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI',missions=rcMissionIds(record).join(', ')||'—',reportTypes=shortReportTypes(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:var(--green-light);color:var(--green);">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${ocMissionLinks(record)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
     return;
   }
-  body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:78px"><col style="width:190px"><col style="width:88px"><col style="width:112px"><col style="width:85px"><col style="width:105px"><col style="width:142px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),validated=!!record.validated_date,sent=!!(record.email_sent_date||record.first_report_date),status=view==='pending'?'Awaiting':sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=String(record.powerbi_title||'').trim()||'Power BI name not set',reportTypes=shortReportTypes(record).join(', ')||'—',missions=rcMissionIds(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:${validated?'var(--green-light)':'var(--amber-light)'};color:${validated?'var(--green)':'var(--amber)'};">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${esc(missions)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td>${mainWorkflowCompliance(record)}</td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:`<span class="oc-meta">${esc(pbiName)}</span>`}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
+  body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:78px"><col style="width:190px"><col style="width:88px"><col style="width:112px"><col style="width:85px"><col style="width:105px"><col style="width:142px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),validated=!!record.validated_date,sent=!!(record.email_sent_date||record.first_report_date),status=view==='pending'?'Awaiting':sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=String(record.powerbi_title||'').trim()||'Power BI name not set',reportTypes=shortReportTypes(record).join(', ')||'—',missions=rcMissionIds(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:${validated?'var(--green-light)':'var(--amber-light)'};color:${validated?'var(--green)':'var(--amber)'};">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${ocMissionLinks(record)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td>${mainWorkflowCompliance(record)}</td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:`<span class="oc-meta">${esc(pbiName)}</span>`}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
 }
 
 // ── Card builder ───────────────────────────────────────────────────────────
@@ -1628,6 +1669,7 @@ const ocStatusSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,s
 const ocFallbackSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,report_type_ids,startdate,enddate,powerbi_url,powerbi_title,first_report_date,email_sent_date,cancelled_date,not_sent_date';
 const ocToday=()=>new Date().toISOString().split('T')[0];
 const ocPlusDays=days=>{const date=new Date();date.setDate(date.getDate()+days);return date.toISOString().split('T')[0];};
+const ocIsClosingCandidate=record=>!record.cancelled_date&&!record.not_sent_date&&!record.first_report_date&&!record.email_sent_date&&!rcIsNoReporting(record);
 const ocCountdownLabel=enddate=>{
   const end=Date.parse(`${enddate||''}T00:00:00Z`),today=Date.parse(`${ocToday()}T00:00:00Z`);
   if(!Number.isFinite(end)||!Number.isFinite(today))return 'N-?';
@@ -1669,7 +1711,8 @@ async function oc_load(){
         oc_schemaReady=false;
       }
     }
-    oc_rows=oc_rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!record.first_report_date&&!record.email_sent_date);
+    oc_rows=oc_rows.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!record.first_report_date&&!record.email_sent_date&&!rcIsNoReporting(record));
+    oc_rows=oc_rows.filter(ocIsClosingCandidate);
     await applyReportingCompliance(oc_rows,{autoConfirm:true});
     if(!oc_rows.some(record=>String(record.id)===String(oc_selectedId)))oc_selectedId=oc_rows[0]?.id??null;
     oc_populateFilters();oc_render();
@@ -1687,10 +1730,10 @@ function oc_render(){
   if(!list)return;
   if(!rows.length){list.innerHTML='<div class="oc-empty">No animations ending in the next 5 days match these filters.</div>';document.getElementById('oc-detail').innerHTML='<div class="oc-empty">No animation selected.</div>';return;}
   if(!rows.some(record=>String(record.id)===String(oc_selectedId)))oc_selectedId=rows[0].id;
-  list.innerHTML=`<table class="oc-table"><colgroup><col style="width:58px"><col style="width:184px"><col style="width:90px"><col style="width:118px"><col style="width:118px"><col style="width:74px"><col style="width:102px"><col style="width:104px"><col style="width:118px"></colgroup><thead><tr><th>Alert</th><th>Animation / mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>KPIs</th><th>Global Feedback</th><th>Report Type</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const selected=String(record.id)===String(oc_selectedId),pbi=ocSafeUrl(record.powerbi_url),pct=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total}`:'—',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,reportTypes=shortReportTypes(record).join(', ')||'—',pbiName=record.powerbi_title||'Open Power BI';return `<tr class="oc-row${selected?' selected':''}" onclick="oc_select(${record.id})"><td><span class="oc-alert">${ocCountdownLabel(record.enddate)}</span></td><td><div class="oc-name">${esc(record.Title||'Untitled animation')}</div><div class="oc-meta">${esc(ocClient(record))}</div><button class="oc-mission" onclick="event.stopPropagation();oc_openReporting(${record.id})">Mission ${esc(rcMissionIds(record).join(', ')||'—')} → Reporting Check</button></td><td><span class="oc-sap">${esc(record.sapcode||'—')}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-state ${record.reporting_compliant?'ok':'missing'}">${pct}</span><div class="oc-meta">Absent: ${absent}${backup?` · Backup: ${backup}`:''}</div></td><td><span class="oc-state ${record.kpis_ok?'ok':'missing'}">${record.kpis_ok?'✓ OK':'✕ Missing'}</span></td><td><span class="oc-state ${record.global_feedback_received?'ok':'missing'}">${record.global_feedback_received?'✓ Received':'✕ Missing'}</span></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table>`;
+  list.innerHTML=`<table class="oc-table"><colgroup><col style="width:58px"><col style="width:184px"><col style="width:90px"><col style="width:118px"><col style="width:118px"><col style="width:74px"><col style="width:102px"><col style="width:104px"><col style="width:118px"></colgroup><thead><tr><th>Alert</th><th>Animation / mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>KPIs</th><th>Global Feedback</th><th>Report Type</th><th>BI</th></tr></thead><tbody>${rows.map(record=>{const selected=String(record.id)===String(oc_selectedId),pbi=ocSafeUrl(record.powerbi_url),pct=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total}`:'—',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,reportTypes=shortReportTypes(record).join(', ')||'—',pbiName=record.powerbi_title||'Open Power BI';return `<tr class="oc-row${selected?' selected':''}" onclick="oc_select(${record.id})"><td><span class="oc-alert">${ocCountdownLabel(record.enddate)}</span></td><td><div class="oc-name">${esc(record.Title||'Untitled animation')}</div><div class="oc-meta">${esc(ocClient(record))}</div><span class="oc-meta">Mission ${ocMissionLinks(record)}</span><button class="oc-mission" onclick="event.stopPropagation();oc_openReporting(${record.id})">→ Reporting Check</button></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-state ${record.reporting_compliant?'ok':'missing'}">${pct}</span><div class="oc-meta">Absent: ${absent}${backup?` · Backup: ${backup}`:''}</div></td><td><span class="oc-state ${record.kpis_ok?'ok':'missing'}">${record.kpis_ok?'✓ OK':'✕ Missing'}</span></td><td><span class="oc-state ${record.global_feedback_received?'ok':'missing'}">${record.global_feedback_received?'✓ Received':'✕ Missing'}</span></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table>`;
   oc_renderDetail(rows.find(record=>String(record.id)===String(oc_selectedId))||rows[0]);
 }
-function oc_renderDetail(record){const detail=document.getElementById('oc-detail');if(!detail||!record)return;const ready=!!(record.reporting_compliant&&record.kpis_ok&&record.global_feedback_received),pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI report',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,complianceHelp=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${absent}${backup?` · Absent with backup: ${backup}`:''}`:'Compliance unavailable';detail.innerHTML=`<div class="oc-detail-head"><div class="oc-eyebrow">Final client check · ${ocCountdownLabel(record.enddate)}</div><div class="oc-detail-title">${esc(record.Title||'Untitled animation')}</div><div class="oc-detail-sub">Mission ${esc(rcMissionIds(record).join(', ')||'—')} · SAP ${esc(record.sapcode||'—')} · ${esc(shortReportTypes(record).join(', ')||'No report type')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Final status · read only</div>${oc_readOnlyCheck(!!record.reporting_compliant,'Reporting compliance (75% minimum)',complianceHelp)}${oc_readOnlyCheck(!!record.kpis_ok,'KPIs checked by Insights','Results and data quality confirmed')}${oc_readOnlyCheck(!!record.global_feedback_received,'Global feedback','Final feedback received')}</div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div></div><div class="oc-detail-foot" style="color:${ready?'var(--green)':'var(--amber)'}">Operations view only · ${ready?'all final checks are complete':'updates are made in Insights Check'}</div>`;}
+function oc_renderDetail(record){const detail=document.getElementById('oc-detail');if(!detail||!record)return;const ready=!!(record.reporting_compliant&&record.kpis_ok&&record.global_feedback_received),pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI report',absent=Number(record.reporting_compliance_absent)||0,backup=Number(record.reporting_compliance_backup)||0,complianceHelp=Number.isFinite(record.reporting_compliance_pct)?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${absent}${backup?` · Absent with backup: ${backup}`:''}`:'Compliance unavailable';detail.innerHTML=`<div class="oc-detail-head"><div class="oc-eyebrow">Final client check · ${ocCountdownLabel(record.enddate)}</div><div class="oc-detail-title">${esc(record.Title||'Untitled animation')}</div><div class="oc-detail-sub">Mission ${ocMissionLinks(record)} · SAP ${ocSapLink(record.sapcode)} · ${esc(shortReportTypes(record).join(', ')||'No report type')}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Final status · read only</div>${oc_readOnlyCheck(!!record.reporting_compliant,'Reporting compliance (75% minimum)',complianceHelp)}${oc_readOnlyCheck(!!record.kpis_ok,'KPIs checked by Insights','Results and data quality confirmed')}${oc_readOnlyCheck(!!record.global_feedback_received,'Global feedback','Final feedback received')}</div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:'<div class="oc-meta">No Power BI link set.</div>'}</div></div><div class="oc-detail-foot" style="color:${ready?'var(--green)':'var(--amber)'}">Operations view only · ${ready?'all final checks are complete':'updates are made in Insights Check'}</div>`;}
 async function oc_openReporting(id){const record=oc_rows.find(item=>String(item.id)===String(id));if(!record)return;rc_selectedTrackingId=String(record.id);rc_selectedTrackingIds=new Set([String(record.id)]);rc_initialized=true;setView('rc');await rc_loadTrackingPickers();document.getElementById('rc_from').value=record.startdate||ocToday();document.getElementById('rc_to').value=record.enddate||ocToday();rc_filterOptions={};rc_filterState={};rc_filterMode={};rc_forceAllFilters=true;rc_kpiFilter='';await rc_load();rc_populateFilters();rc_render();rc_renderSapOptions();}
 
 // ── Reporting Check ─────────────────────────────────────────────────────────
@@ -2101,6 +2144,22 @@ const rcMissionIds=record=>{
   if(Number.isInteger(primary)&&primary>0)ids.unshift(String(primary));
   return [...new Set(ids)];
 };
+function ocMissionLink(id){
+  const value=String(id??'').trim();
+  if(!/^\d+$/.test(value)||Number(value)<1)return esc(value||'—');
+  const url=`https://app.globe-intelligence.com/missions/details/${encodeURIComponent(value)}?pageNumber=1&pageSize=10&displayEmptyMissions=false&tab=general`;
+  return `<a class="oc-ref-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" title="Open mission ${esc(value)}">${esc(value)}</a>`;
+}
+function ocMissionLinks(record){
+  const ids=rcMissionIds(record);
+  return ids.length?ids.map(ocMissionLink).join(', '):'—';
+}
+function ocSapLink(code){
+  const value=String(code??'').trim();
+  if(!value)return '—';
+  const url=`https://app.globe-intelligence.com/missions/all?pageNumber=1&pageSize=10&campaignSapCode=${encodeURIComponent(value)}&startDate=&displayEmptyMissions=false`;
+  return `<a class="oc-ref-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" title="Find missions for SAP ${esc(value)}">${esc(value)}</a>`;
+}
 function rcIsStandby(record,records){
   if(!record||rcMissionIds(record).length)return false;
   const sap=rcNorm(record.sapcode);
@@ -3386,7 +3445,7 @@ function rc_render(){
       html += `<tr style="border-bottom:1px solid var(--g100);height:70px;" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
         <td style="padding:9px 8px;vertical-align:middle;overflow-wrap:anywhere;">
           <div style="font-size:11.5px;font-weight:800;color:var(--g900);line-height:1.25;">${r.day}</div>
-          <div style="font-family:monospace;font-size:9.5px;color:var(--g400);line-height:1.25;margin-top:3px;">Mission ${r.missionId??'\u2014'}</div>
+          <div style="font-family:monospace;font-size:9.5px;color:var(--g400);line-height:1.25;margin-top:3px;">Mission ${ocMissionLink(r.missionId)}</div>
         </td>
         <td style="padding:9px 8px;vertical-align:middle;line-height:1.2;overflow-wrap:anywhere;${promoterColor}">
           <div style="font-size:12px;font-weight:700;">${promoterFirst}${!promoterLast ? promoterSuffix : ''}</div>
@@ -3405,7 +3464,7 @@ function rc_render(){
             ? `<div style="font-size:9.5px;color:var(--g400);line-height:1.2;margin-top:3px;">${r.campaignName}</div>`
             : ''}
           ${displaySap
-            ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${displaySap}</div>`
+            ? `<div style="font-family:monospace;font-size:9px;font-weight:700;color:var(--blue);line-height:1.2;margin-top:3px;">SAP: ${ocSapLink(displaySap)}</div>`
             : ''}
           ${splitBrands?`<div style="display:inline-flex;margin-top:4px;padding:2px 6px;border-radius:10px;background:var(--blue-light);color:var(--blue);font-size:9px;font-weight:700;">${brandLines.length} reported brands</div>`:''}
         </td>
