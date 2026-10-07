@@ -1656,7 +1656,7 @@ const ocStatusSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,s
 const ocFallbackSelect='id,Title,client,brand,sapcode,mission_id,store,brand_ids,store_ids,sector_ids,client_fk,company_ids,report_type_ids,startdate,enddate,powerbi_url,powerbi_title,first_report_date,email_sent_date,cancelled_date,not_sent_date';
 const ocToday=()=>new Date().toISOString().split('T')[0];
 const ocPlusDays=days=>{const date=new Date();date.setDate(date.getDate()+days);return date.toISOString().split('T')[0];};
-const ocIsClosingCandidate=record=>!record.cancelled_date&&!record.not_sent_date&&!record.first_report_date&&!record.email_sent_date&&!rcIsNoReporting(record);
+const ocIsClosingCandidate=record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record);
 const ocCountdownLabel=enddate=>{
   const end=Date.parse(`${enddate||''}T00:00:00Z`),today=Date.parse(`${ocToday()}T00:00:00Z`);
   if(!Number.isFinite(end)||!Number.isFinite(today))return 'N-?';
