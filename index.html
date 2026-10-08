@@ -812,6 +812,8 @@ const MAIN_FILTER_DEFS=[
   {key:'agency',label:'Agency',values:r=>resolveIds(r.company_ids,allCo,'name')},
   {key:'sector',label:'Sector',values:r=>shortSectors(r)},
   {key:'client',label:'Client',values:r=>[shortClient(r)]},
+  {key:'client',label:'Client',values:r=>[shortClient(r)||r.client||'']},
+  {key:'sap',label:'SAP code',values:r=>[r.sapcode||'']},
 ];
 
 function main_viewRows(){
