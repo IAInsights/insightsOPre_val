@@ -19,4 +19,16 @@ run("adminStoreSession({access_token:'expired',refresh_token:'refresh',expires_a
 const html=await fs.readFile(new URL('../index.html',import.meta.url),'utf8');
 const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];for(const [i,s] of scripts.entries())new vm.Script(s[1],{filename:`index-inline-${i}.js`});
 assert.match(html,/id="hdr-tab-admin"/);assert.match(html,/id="admin-page"/);assert.match(html,/src="admin.js"/);
-console.log('Passed: filters, escaping, session expiry, authenticated RPC, navigation and JavaScript syntax.');
+context.document={getElementById:id=>({value:({'admin-search':'ALICE','admin-client':'10','admin-commercial':'20'})[id]||''})};
+context.exported=null;context.toast=()=>{};
+context.XLSX={utils:{aoa_to_sheet:values=>({values,'!ref':'A1:H2'}),book_new:()=>({}),book_append_sheet:(book,sheet,name)=>{book.sheet=sheet;book.name=name}},writeFile:(book,filename)=>{context.exported={book,filename}}};
+run("adminActor='20';adminData={contacts:[{...fixture[0],active:false,retailer_ids:['30','31']}],clients:[{id:'10',name:'Example Client'}],retailers:[{id:'30',name:'Retailer One'},{id:'31',name:'Retailer Two'}],commercials:[{id:'20',name:'Demo Commercial'}]};adminExportExcel()");
+assert.equal(context.exported.book.sheet.values.length,2);
+assert.equal(context.exported.book.sheet.values[1][4],'Example Client');
+assert.equal(context.exported.book.sheet.values[1][5],'Retailer One; Retailer Two');
+assert.equal(context.exported.book.sheet.values[1][6],'Demo Commercial');
+assert.equal(context.exported.book.sheet.values[1][7],'FALSE');
+assert.equal(context.exported.book.sheet['!autofilter'].ref,'A1:H2');
+assert.match(context.exported.filename,/^Contacts_\d{4}-\d{2}-\d{2}\.xlsx$/);
+context.exported=null;run("adminData.contacts=[];adminExportExcel()");assert.equal(context.exported,null);
+console.log('Passed: filters, escaping, sessions, RPCs, navigation, syntax and filtered Excel export with resolved names and multiple retailers.');
