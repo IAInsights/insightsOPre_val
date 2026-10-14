@@ -656,6 +656,10 @@ function complianceYesterday(){
 }
 const complianceIsDue=value=>String(value||'').slice(0,10)<complianceToday();
 const RC_BI_SPECIAL_REPORT_TYPE_ID='13';
+function rcIsClubAvoltaSchedule(schedule){
+  const label=rcNorm(`${schedule?.brand||''} ${schedule?.client||''} ${schedule?.campaign_name||''}`);
+  return label.includes('CLUB AVOLTA')||label.includes('AVOLTA CLUB');
+}
 function rcBuildClubAvoltaSubmissionIndex(rows){
   const index=new Set();
   (rows||[]).forEach(row=>{
@@ -748,15 +752,20 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
       const absent=schedules.filter(isAbsent).length;
       const backup=schedules.filter(isBackup).length;
       const eligible=schedules.filter(schedule=>!isAbsent(schedule)&&!isPending(schedule));
-      const clubAvoltaReported=new Set(isBISpecial&&clubAvoltaAvailable
-        ?eligible.filter(schedule=>rcHasClubAvoltaSubmission(schedule,clubAvoltaIndex))
+      const clubAvoltaSchedules=isBISpecial
+        ?eligible.filter(schedule=>rcIsClubAvoltaSchedule(schedule))
+        :[];
+      const clubAvoltaReported=new Set(clubAvoltaAvailable
+        ?clubAvoltaSchedules.filter(schedule=>rcHasClubAvoltaSubmission(schedule,clubAvoltaIndex))
         :[]);
-      record.club_avolta_available=!isBISpecial||clubAvoltaAvailable;
-      record.club_avolta_reported=isBISpecial?clubAvoltaReported.size:null;
-      record.club_avolta_total=isBISpecial?eligible.length:null;
+      record.club_avolta_available=!clubAvoltaSchedules.length||clubAvoltaAvailable;
+      record.club_avolta_reported=clubAvoltaSchedules.length?clubAvoltaReported.size:null;
+      record.club_avolta_total=clubAvoltaSchedules.length||null;
       const reported=eligible.filter(schedule=>{
+        if(isBISpecial&&rcIsClubAvoltaSchedule(schedule)){
+          return clubAvoltaAvailable&&clubAvoltaReported.has(schedule);
+        }
         if((reportAssignments.assigned.get(schedule)||[]).length)return true;
-        if(clubAvoltaReported.has(schedule))return true;
         const store=String(schedule.pos_id??'').trim()||rcNorm(schedule.store_code||schedule.pos);
         return isBackup(schedule)&&storeDayReports.has(`${schedule.day}|${store}`);
       }).length;
@@ -2522,7 +2531,8 @@ async function rc_load(){
       const hasS = sEntries.length > 0;
       const tracking=trackingBySchedule.get(r)||null;
       const isBISpecial=rcTrackingIds(tracking?.report_type_ids).includes(RC_BI_SPECIAL_REPORT_TYPE_ID);
-      const clubAvoltaSubmitted=isBISpecial&&clubAvoltaAvailable&&rcHasClubAvoltaSubmission(r,clubAvoltaIndex);
+      const requiresClubAvolta=isBISpecial&&rcIsClubAvoltaSchedule(r);
+      const clubAvoltaSubmitted=requiresClubAvolta&&clubAvoltaAvailable&&rcHasClubAvoltaSubmission(r,clubAvoltaIndex);
 
       const reportedStores = [...new Set([...qEntries.map(e=>e.Store), ...sEntries.map(e=>e.Store)].filter(Boolean))];
       const reportedBrands = [...new Set([...qEntries.map(e=>e.Brand), ...sEntries.map(e=>e.Brand)].filter(Boolean))];
@@ -2539,9 +2549,9 @@ async function rc_load(){
       else if(ts.includes('absent avec'))    status = 'absent_backup';
       else if(ts.includes('absent'))    status = 'absent';
       else if(ts.includes('attente'))   status = 'pending';
-      else if(isBISpecial&&!clubAvoltaAvailable) status = 'pending';
-      else if(isBISpecial&&clubAvoltaSubmitted) status = 'complete';
-      else if(isBISpecial)              status = 'missing';
+      else if(requiresClubAvolta&&!clubAvoltaAvailable) status = 'pending';
+      else if(requiresClubAvolta&&clubAvoltaSubmitted) status = 'complete';
+      else if(requiresClubAvolta)              status = 'missing';
       else if(hasQ)                     status = 'complete';
       else if(hasS)                     status = 'partial';
       else                              status = 'missing';
@@ -2572,7 +2582,7 @@ async function rc_load(){
         turnover: (hasQ ? turnover : null),
         sector: sectorByStore.get(rcNorm(r.store_code))||sectorByStore.get(rcNorm(r.pos))||'',
         timeslotStatus: r.timeslot_status || null,
-        isBISpecial,clubAvoltaAvailable,clubAvoltaSubmitted,
+        isBISpecial,requiresClubAvolta,clubAvoltaAvailable,clubAvoltaSubmitted,
         status,
       };
     });
@@ -3448,7 +3458,7 @@ document.addEventListener('click',e=>{
 });
 
 function rcSpecialCell(row){
-  if(!row.isBISpecial)return '<span style="color:var(--g300);">—</span>';
+  if(!row.requiresClubAvolta)return '<span style="color:var(--g300);">—</span>';
   if(row.clubAvoltaAvailable===false)return '<span style="display:inline-flex;white-space:nowrap;background:var(--amber-light);color:var(--amber);padding:4px 8px;border-radius:20px;font-size:10px;font-weight:700;" title="ClubAvolta could not be checked">Unavailable</span>';
   if(row.status==='not_due'&&!row.clubAvoltaSubmitted)return '<span style="display:inline-flex;white-space:nowrap;background:var(--blue-light);color:var(--blue);padding:4px 8px;border-radius:20px;font-size:10px;font-weight:700;">Not due</span>';
   if(row.status==='absent')return '<span style="color:var(--g400);font-size:10px;">Not required</span>';
