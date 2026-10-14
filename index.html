@@ -562,6 +562,22 @@ const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 
 // ── State ──────────────────────────────────────────────────────────────────
 let allCo=[], allCl=[], allBr=[], allSt=[], allSectors=[], allOps=[], allRT=[];
+const REPORT_TYPE_PRIORITY=new Map([
+  ['bi insights',0],
+  ['bi special',1],
+  ['ba insights',2],
+  ['ba report',3],
+]);
+function orderedVisibleReportTypes(rows){
+  return [...(rows||[])]
+    .filter(row=>row&&row.visible!==false)
+    .sort((a,b)=>{
+      const aName=String(a.type||'').trim(),bName=String(b.type||'').trim();
+      const aRank=REPORT_TYPE_PRIORITY.get(aName.toLowerCase())??100;
+      const bRank=REPORT_TYPE_PRIORITY.get(bName.toLowerCase())??100;
+      return aRank-bRank||aName.localeCompare(bName);
+    });
+}
 let allRec=[], view='home', selMap={}, currentRid=null;
 const mainWorkflowSelected={pending:null,all:null};
 let main_filterOptions={}, main_filterState={}, main_filterMode={};
@@ -809,10 +825,10 @@ async function loadData(){
       operationsStartupGet('Sectors',()=>sbGet('Sector?select=id,Name,companyid&order=Name')),
       operationsStartupGet('Insights Tracking records',()=>sbGet('InsightsTracking?select=*&under_review_date=not.is.null&order=under_review_date.desc'),{required:true}),
       operationsStartupGet('Operations contacts',()=>sbGet('Contacts_Operations?select=id,firstname,lastname,email,company,jobtitle&order=lastname')),
-      operationsStartupGet('Report types',()=>sbGet('report_types?select=id,type&order=type')),
+      operationsStartupGet('Report types',()=>sbGet('report_types?select=id,type,visible&visible=eq.true&order=type')),
       operationsStartupGet('Active campaigns',()=>sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${activeDate}&enddate=gte.${activeDate}&order=enddate.asc`)),
     ]);
-    allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRT=rtypes||[]; allRec=recs||[]; selMap={};
+    allCo=co||[]; allCl=cl||[]; allBr=br||[]; allSt=st||[]; allSectors=sec||[]; allOps=ops||[]; allRT=orderedVisibleReportTypes(rtypes); allRec=recs||[]; selMap={};
     const activeRecords=activeRows||[];
     const activeHomeRecords=activeRecords.filter(record=>!record.cancelled_date&&!record.not_sent_date&&!rcIsNoReporting(record)&&!rcIsStandby(record,activeRecords)&&homeIsBiInsights(record));
     const pendingRecords=allRec.filter(record=>!record.validated_date);
@@ -2023,8 +2039,8 @@ async function rc_loadTrackingPickers(){
   if(!rc_trackingRecords.length||!rc_trackingReportTypes.length){
     try{[rc_trackingRecords,rc_trackingReportTypes]=await Promise.all([
       sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&enddate=gte.${RC_MIN_DATE}&order=enddate.desc`),
-      sbGet('report_types?select=id,type&order=type')
-    ]);}
+      sbGet('report_types?select=id,type,visible&visible=eq.true&order=type')
+    ]);rc_trackingReportTypes=orderedVisibleReportTypes(rc_trackingReportTypes);}
     catch(error){return;}
   }
   const reportType=document.getElementById('rc_record_report_type');if(!reportType)return;
@@ -2330,7 +2346,7 @@ async function rc_load(){
     const [schedRows,trackingRows,reportTypeRows,storesWithSector] = await Promise.all([
       sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,agency,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}${selectedScheduleFilter}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`),
       sbGetAll(`InsightsTracking?select=*&enddate=gte.${RC_MIN_DATE}`),
-      sbGet('report_types?select=id,type&order=type'),
+      sbGet('report_types?select=id,type,visible&visible=eq.true&order=type'),
       sbGet('GI_stores?select=id,store,Sector_id'),
     ]);
     if(requestId!==rc_loadRequest)return;
