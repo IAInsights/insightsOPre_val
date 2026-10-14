@@ -22,7 +22,8 @@ const index=rcBuildClubAvoltaSubmissionIndex([
 globalThis.results={
   exact:rcHasClubAvoltaSubmission({day:'2026-10-14',promoter_id:11484,pos_id:32466},index),
   normalized:rcHasClubAvoltaSubmission({day:'2026-10-13',promoter_fullname:'Rene Test',pos:'Zurich L2'},index),
-  wrongStore:rcHasClubAvoltaSubmission({day:'2026-10-14',promoter_id:11484,pos_id:48},index)
+  wrongStore:rcHasClubAvoltaSubmission({day:'2026-10-14',promoter_id:11484,pos_id:48},index),
+  batchBoundary:rcAddUtcDays('2025-05-01',369)
 };`;
 
 const context = {};
@@ -30,5 +31,6 @@ vm.runInNewContext(testSource, context, {filename:file});
 assert.equal(context.results.exact, true);
 assert.equal(context.results.normalized, true);
 assert.equal(context.results.wrongStore, false);
+assert.equal(context.results.batchBoundary, '2026-05-05');
 console.log(`${file}: ClubAvolta matching tests passed`);
 
