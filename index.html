@@ -670,6 +670,21 @@ function rcHasClubAvoltaSubmission(schedule,index){
   ];
   return promoters.some(promoter=>stores.some(store=>index.has(`${day}|${promoter}|${store}`)));
 }
+function rcAddUtcDays(value,days){
+  const date=new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate()+days);
+  return date.toISOString().slice(0,10);
+}
+async function rcLoadClubAvoltaSubmissions(from,to){
+  const rows=[];
+  for(let start=from;start<=to;){
+    const batchEnd=rcAddUtcDays(start,369);
+    const end=batchEnd<to?batchEnd:to;
+    rows.push(...await sbPost('rpc/club_avolta_submissions',{p_from:start,p_to:end}));
+    start=rcAddUtcDays(end,1);
+  }
+  return rows;
+}
 
 async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmIds=null,asOfDate=''}={}){
   const targets=records.filter(record=>record.startdate&&record.enddate);
@@ -688,7 +703,7 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
     const [scheduleRows,questionnaireRows,clubAvoltaRows]=await Promise.all([
       sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc`),
       sbGetAll(`legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`),
-      sbPost('rpc/club_avolta_submissions',{p_from:from,p_to:to}).catch(error=>{console.warn('ClubAvolta submissions unavailable:',error);return[];})
+      rcLoadClubAvoltaSubmissions(from,to).catch(error=>{console.warn('ClubAvolta submissions unavailable:',error);return null;})
     ]);
     const excludedRoles=new Set(['Team Leader','Team leader','Team Leader GVA','Superviseur / euse','Superviseur/euse','Téléopérateur/trice']);
     const excludedTerms=['training','coaching','store check','atelier s'];
@@ -707,6 +722,7 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
       storeDayReports.add(`${report.Date}|${String(report.Storeid??'').trim()||rcNorm(report.Store)}`);
     });
     const clubAvoltaIndex=rcBuildClubAvoltaSubmissionIndex(clubAvoltaRows);
+    const clubAvoltaAvailable=Array.isArray(clubAvoltaRows);
     const updates=[];
     targets.forEach(record=>{
       const schedules=byRecord.get(String(record.id))||[];
@@ -717,9 +733,15 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
       const absent=schedules.filter(isAbsent).length;
       const backup=schedules.filter(isBackup).length;
       const eligible=schedules.filter(schedule=>!isAbsent(schedule)&&!isPending(schedule));
+      const clubAvoltaReported=new Set(isBISpecial&&clubAvoltaAvailable
+        ?eligible.filter(schedule=>rcHasClubAvoltaSubmission(schedule,clubAvoltaIndex))
+        :[]);
+      record.club_avolta_available=!isBISpecial||clubAvoltaAvailable;
+      record.club_avolta_reported=isBISpecial?clubAvoltaReported.size:null;
+      record.club_avolta_total=isBISpecial?eligible.length:null;
       const reported=eligible.filter(schedule=>{
         if((reportAssignments.assigned.get(schedule)||[]).length)return true;
-        if(isBISpecial&&rcHasClubAvoltaSubmission(schedule,clubAvoltaIndex))return true;
+        if(clubAvoltaReported.has(schedule))return true;
         const store=String(schedule.pos_id??'').trim()||rcNorm(schedule.store_code||schedule.pos);
         return isBackup(schedule)&&storeDayReports.has(`${schedule.day}|${store}`);
       }).length;
@@ -1341,6 +1363,15 @@ function mainWorkflowCompliance(record){
   if(!Number.isFinite(record.reporting_compliance_pct))return '<span class="oc-state missing">Unavailable</span>';
   return `<span class="oc-state ${record.reporting_compliance_pct>=75?'ok':'missing'}">${record.reporting_compliance_pct}%</span>`;
 }
+function mainWorkflowSpecial(record){
+  if(!rcTrackingIds(record?.report_type_ids).includes(RC_BI_SPECIAL_REPORT_TYPE_ID))return '<span class="oc-meta">—</span>';
+  if(record.club_avolta_available===false)return '<span class="oc-state missing" title="ClubAvolta could not be checked">Unavailable</span>';
+  const reported=Number(record.club_avolta_reported),total=Number(record.club_avolta_total);
+  if(!Number.isFinite(reported)||!Number.isFinite(total))return '<span class="oc-state missing">Loading…</span>';
+  const complete=total>0&&reported>=total;
+  const label=total?`${complete?'✓ ':''}${reported}/${total}`:'No shifts';
+  return `<span class="oc-state ${complete?'ok':'missing'}" title="ClubAvolta submitted reports: ${reported} of ${total}" style="color:${complete?'var(--green)':reported?'var(--amber)':'var(--red)'}">${label}</span>`;
+}
 function mainWorkflowDetail(record){
   if(!record)return'<div class="oc-empty">Select a report.</div>';
   const isValidated=!!record.validated_date;
@@ -1348,6 +1379,7 @@ function mainWorkflowDetail(record){
   const pbi=ocSafeUrl(record.powerbi_url);
   const pbiName=String(record.powerbi_title||'').trim()||'Power BI name not set';
   const reportTypes=shortReportTypes(record).join(', ')||'No report type';
+  const isBISpecial=rcTrackingIds(record.report_type_ids).includes(RC_BI_SPECIAL_REPORT_TYPE_ID);
   const missions=rcMissionIds(record).join(', ')||'—';
   const compliance=Number.isFinite(record.reporting_compliance_pct)
     ?`${record.reporting_compliance_pct}% · ${record.reporting_compliance_reported}/${record.reporting_compliance_total} reportable shifts · Absent: ${Number(record.reporting_compliance_absent)||0}`
@@ -1358,7 +1390,7 @@ function mainWorkflowDetail(record){
   }else{
     action=`<div class="oc-state ok">✓ Validated by ${esc(record.validated_by||'—')}</div>${isSent?`<div style="margin-top:8px;padding:9px;border-radius:7px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;text-align:center;">Final report was sent · ${fd(record.email_sent_date||record.first_report_date)||'—'}</div>`:`<button class="btn-unvalidate" onclick="doUnvalidate(${record.id})" style="width:100%;margin-top:8px;">Undo validation</button>`}`;
   }
-  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${ocMissionLinks(record)} · SAP ${ocSapLink(record.sapcode)} · ${esc(reportTypes)}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div><div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:`<div class="oc-meta">${esc(pbiName)} · No Power BI link set.</div>`}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
+  return `<div class="oc-detail-head"><div class="oc-eyebrow">${view==='pending'?'Report validation':'Validated report'}</div><div class="oc-detail-title">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-detail-sub">Mission ${ocMissionLinks(record)} · SAP ${ocSapLink(record.sapcode)} · ${esc(reportTypes)}</div><div class="oc-range"><strong>Operation date range</strong>${fd(record.startdate)||'—'} → ${fd(record.enddate)||'—'}</div></div><div class="oc-detail-body"><div class="oc-section"><div class="oc-section-title">Reporting compliance</div><div style="font-size:11.5px;color:${Number(record.reporting_compliance_pct)>=75?'var(--green)':'var(--amber)'};font-weight:700;">${esc(compliance)}</div></div>${isBISpecial?`<div class="oc-section"><div class="oc-section-title">Special reports · ClubAvolta</div>${mainWorkflowSpecial(record)}</div>`:''}<div class="oc-section"><div class="oc-section-title">Power BI</div>${pbi?`<a class="oc-pbi" style="width:100%;justify-content:center;padding:7px" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer">${esc(pbiName)}</a>`:`<div class="oc-meta">${esc(pbiName)} · No Power BI link set.</div>`}</div><div class="oc-section"><div class="oc-section-title">Review notes</div>${view==='pending'?`<textarea class="notes-ta" rows="4" placeholder="Add notes…" onblur="saveNote(${record.id},this.value)" style="width:100%;">${esc(record.comments_status||'')}</textarea>`:`<div style="font-size:11px;color:var(--g600);">${esc(record.comments_status||'No review notes.')}</div>`}</div><div class="oc-section"><div class="oc-section-title">${view==='pending'?'Validation':'Final status'}</div>${action}</div></div><div class="oc-detail-foot" style="color:${isValidated?'var(--green)':'var(--amber)'}">${isSent?'Final report sent':isValidated?'Validated and ready':'Waiting for validation'}</div>`;
 }
 function renderCards(rows){
   const body=document.getElementById('body');
@@ -1370,10 +1402,10 @@ function renderCards(rows){
   if(!rows.some(record=>String(record.id)===String(mainWorkflowSelected[view])))mainWorkflowSelected[view]=rows[0].id;
   const selected=rows.find(record=>String(record.id)===String(mainWorkflowSelected[view]))||rows[0];
   if(view==='all'){
-    body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:82px"><col style="width:220px"><col style="width:95px"><col style="width:125px"><col style="width:125px"><col style="width:150px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),sent=!!(record.email_sent_date||record.first_report_date),status=sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI',missions=rcMissionIds(record).join(', ')||'—',reportTypes=shortReportTypes(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:var(--green-light);color:var(--green);">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${ocMissionLinks(record)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
+    body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:82px"><col style="width:220px"><col style="width:95px"><col style="width:125px"><col style="width:80px"><col style="width:125px"><col style="width:150px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Special</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),sent=!!(record.email_sent_date||record.first_report_date),status=sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=record.powerbi_title||'Open Power BI',missions=rcMissionIds(record).join(', ')||'—',reportTypes=shortReportTypes(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:var(--green-light);color:var(--green);">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${ocMissionLinks(record)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td>${mainWorkflowSpecial(record)}</td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
     return;
   }
-  body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:78px"><col style="width:190px"><col style="width:88px"><col style="width:112px"><col style="width:85px"><col style="width:105px"><col style="width:142px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),validated=!!record.validated_date,sent=!!(record.email_sent_date||record.first_report_date),status=view==='pending'?'Awaiting':sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=String(record.powerbi_title||'').trim()||'Power BI name not set',reportTypes=shortReportTypes(record).join(', ')||'—',missions=rcMissionIds(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:${validated?'var(--green-light)':'var(--amber-light)'};color:${validated?'var(--green)':'var(--amber)'};">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${ocMissionLinks(record)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td>${mainWorkflowCompliance(record)}</td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:`<span class="oc-meta">${esc(pbiName)}</span>`}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
+  body.innerHTML=`<div class="oc-body" style="padding:0;width:100%;"><div class="oc-list"><table class="oc-table"><colgroup><col style="width:78px"><col style="width:190px"><col style="width:88px"><col style="width:112px"><col style="width:85px"><col style="width:80px"><col style="width:105px"><col style="width:142px"></colgroup><thead><tr><th>Status</th><th>Report / Mission</th><th>SAP code</th><th>Operation dates</th><th>Compliance</th><th>Special</th><th>Report Type</th><th>Power BI</th></tr></thead><tbody>${rows.map(record=>{const rowSelected=String(record.id)===String(selected.id),validated=!!record.validated_date,sent=!!(record.email_sent_date||record.first_report_date),status=view==='pending'?'Awaiting':sent?'Sent':'Validated',pbi=ocSafeUrl(record.powerbi_url),pbiName=String(record.powerbi_title||'').trim()||'Power BI name not set',reportTypes=shortReportTypes(record).join(', ')||'—',missions=rcMissionIds(record).join(', ')||'—';return `<tr class="oc-row${rowSelected?' selected':''}" onclick="selectMainWorkflow(${record.id})"><td><span class="oc-alert" style="background:${validated?'var(--green-light)':'var(--amber-light)'};color:${validated?'var(--green)':'var(--amber)'};">${status}</span></td><td><div class="oc-name">${esc(record.Title||shortBrands(record).join(', ')||'Untitled report')}</div><div class="oc-meta">Mission ${ocMissionLinks(record)} · ${esc(shortClient(record)||record.client||'')}</div></td><td><span class="oc-sap">${ocSapLink(record.sapcode)}</span></td><td><div>${fd(record.startdate)||'—'}</div><div class="oc-meta">to ${fd(record.enddate)||'—'}</div></td><td>${mainWorkflowCompliance(record)}</td><td>${mainWorkflowSpecial(record)}</td><td><span class="oc-meta">${esc(reportTypes)}</span></td><td>${pbi?`<a class="oc-pbi" href="${esc(pbi)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${esc(pbiName)}</a>`:`<span class="oc-meta">${esc(pbiName)}</span>`}</td></tr>`;}).join('')}</tbody></table></div><aside class="oc-detail">${mainWorkflowDetail(selected)}</aside></div>`;
 }
 
 // ── Card builder ───────────────────────────────────────────────────────────
