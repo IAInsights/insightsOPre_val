@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="admin.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -400,6 +401,7 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn"        id="hdr-tab-pending" onclick="setView('pending')">Reports Validation</button>
   <button class="tab-btn"        id="hdr-tab-closing" onclick="setView('closing')">Closing Soon</button>
   <button class="tab-btn"        id="hdr-tab-all"     onclick="setView('all')">Reports Validated and Sent</button>
+  <button class="tab-btn" id="hdr-tab-admin" onclick="setView('admin')">Admin</button>
   <div class="header-right">
     <details class="app-release">
       <summary title="Open version history">V2026.10.01.4</summary>
@@ -460,6 +462,8 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <div class="body" id="body" style="display:none;">
     <div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Loading…</div>
   </div>
+
+  <section id="admin-page" style="display:none" aria-label="Admin contacts"></section>
 
   <!-- Reporting Check page -->
   <div id="rc-page" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
@@ -1165,16 +1169,19 @@ function home_render(){
 function setView(v){
   const pageChanged=v!==view;
   view=v;
-  ['home','pending','closing','all','rc'].forEach(key=>document.getElementById('hdr-tab-'+key).classList.toggle('active',v===key));
+  ['home','pending','closing','all','rc','admin'].forEach(key=>document.getElementById('hdr-tab-'+key).classList.toggle('active',v===key));
+  const isAdmin=v==='admin';
+  document.getElementById('admin-page').style.display=isAdmin?'block':'none';
   const isHome=v==='home';
   const isReporting=v==='rc';
   const isClosing=v==='closing';
   document.getElementById('home-page').style.display=isHome?'flex':'none';
   document.getElementById('rc-page').style.display=isReporting?'flex':'none';
   document.getElementById('closing-page').style.display=isClosing?'flex':'none';
-  document.getElementById('main-filter-toolbar').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
-  document.getElementById('body').style.display=!isHome&&!isReporting&&!isClosing?'flex':'none';
+  document.getElementById('main-filter-toolbar').style.display=!isHome&&!isReporting&&!isClosing&&!isAdmin?'flex':'none';
+  document.getElementById('body').style.display=!isHome&&!isReporting&&!isClosing&&!isAdmin?'flex':'none';
   document.getElementById('stats-bar').style.display='none';
+  if(isAdmin){adminOpen();return;}
   if(isHome){home_initIfNeeded(false);return;}
   if(isReporting){if(pageChanged){rc_defaultReportTypePending=true;const picker=document.getElementById('rc_record_report_type');if(picker)picker.value='';}rc_initIfNeeded(pageChanged);return;}
   if(isClosing){oc_initIfNeeded();return;}
@@ -3491,5 +3498,6 @@ function rc_render(){
 
 loadData();
 </script>
+<script src="admin.js"></script>
 </body>
 </html>
