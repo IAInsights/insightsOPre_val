@@ -585,7 +585,7 @@ const MAIN_EMPTY='__MAIN_EMPTY__';
 
 // ── API ────────────────────────────────────────────────────────────────────
 const SB_REQUEST_TIMEOUT_MS=30000;
-async function sbFetch(url,options={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),SB_REQUEST_TIMEOUT_MS);try{return await fetch(url,{...options,signal:controller.signal});}catch(error){if(error?.name==='AbortError')throw new Error('Database request timed out. Please refresh the page.');throw error;}finally{clearTimeout(timer);}}
+async function sbFetch(url,options={}){const{signal:externalSignal,...fetchOptions}=options;const controller=new AbortController();let timedOut=false;const abortFromOutside=()=>controller.abort();if(externalSignal?.aborted)controller.abort();else externalSignal?.addEventListener('abort',abortFromOutside,{once:true});const timer=setTimeout(()=>{timedOut=true;controller.abort();},SB_REQUEST_TIMEOUT_MS);try{return await fetch(url,{...fetchOptions,signal:controller.signal});}catch(error){if(error?.name==='AbortError'&&externalSignal?.aborted)throw error;if(error?.name==='AbortError'&&timedOut)throw new Error('Database request timed out. Please refresh the page.');throw error;}finally{clearTimeout(timer);externalSignal?.removeEventListener('abort',abortFromOutside);}}
 function readOperationsSession(){
   try{return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)||'null');}catch(error){return null;}
 }
@@ -615,10 +615,10 @@ async function sbHeaders(extra={}){
   const token=await operationsAccessToken();
   return{'apikey':KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation',...extra};
 }
-async function sbGet(q){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json'})});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function sbGetAll(q,pageSize=1000){const rows=[];for(let from=0;from<200000;from+=pageSize){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json','Range-Unit':'items','Range':`${from}-${from+pageSize-1}`})});if(!r.ok)throw new Error(await r.text());const page=await r.json();rows.push(...page);if(page.length<pageSize)return rows;}throw new Error('The data set is larger than the supported reporting range. Please narrow the dates.');}
+async function sbGet(q,options={}){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json'}),signal:options.signal});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbGetAll(q,pageSize=1000,options={}){const rows=[];for(let from=0;from<200000;from+=pageSize){const r=await sbFetch(`${SB}/rest/v1/${q}`,{headers:await sbHeaders({'Accept':'application/json','Range-Unit':'items','Range':`${from}-${from+pageSize-1}`}),signal:options.signal});if(!r.ok)throw new Error(await r.text());const page=await r.json();rows.push(...page);if(page.length<pageSize)return rows;}throw new Error('The data set is larger than the supported reporting range. Please narrow the dates.');}
 async function sbPatch(t,id,d){const r=await sbFetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:await sbHeaders(),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
-async function sbPost(t,d){const r=await sbFetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:await sbHeaders(),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
+async function sbPost(t,d,options={}){const r=await sbFetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:await sbHeaders(),body:JSON.stringify(d),signal:options.signal});if(!r.ok)throw new Error(await r.text());return r.json();}
 
 // ── Loading / Toast ────────────────────────────────────────────────────────
 let lEl=null;
@@ -686,12 +686,12 @@ function rcAddUtcDays(value,days){
   date.setUTCDate(date.getUTCDate()+days);
   return date.toISOString().slice(0,10);
 }
-async function rcLoadClubAvoltaSubmissions(from,to){
+async function rcLoadClubAvoltaSubmissions(from,to,signal){
   const rows=[];
   for(let start=from;start<=to;){
     const batchEnd=rcAddUtcDays(start,369);
     const end=batchEnd<to?batchEnd:to;
-    rows.push(...await sbPost('rpc/club_avolta_submissions',{p_from:start,p_to:end}));
+    rows.push(...await sbPost('rpc/club_avolta_submissions',{p_from:start,p_to:end},{signal}));
     start=rcAddUtcDays(end,1);
   }
   return rows;
@@ -1824,6 +1824,7 @@ let rc_initialized = false;
 let rc_defaultReportTypePending = true;
 let rc_dateTimer = null;
 let rc_loadRequest = 0;
+let rc_loadController = null;
 let rc_filterOptions = {};
 let rc_emptyState = null;
 let rc_filterState = {};
@@ -1836,6 +1837,7 @@ const RC_EMPTY = '__RC_EMPTY__';
 
 function rc_dateChanged(){
   clearTimeout(rc_dateTimer);
+  if(rc_loadController)rc_loadController.abort();
   rc_dateTimer = setTimeout(()=>{ if(document.getElementById('rc_from').value && document.getElementById('rc_to').value) rc_load(); }, 400);
 }
 
@@ -1861,7 +1863,7 @@ function rc_exportExcel(){
     return (a.promoter||'').localeCompare(b.promoter||'');
   });
 
-  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing', absent:'Absent', absent_backup:'Absent + Backup', pending:'En attente', not_due:'Not due yet' };
+  const statusLabel = { complete:'Reported', partial:'Partial', missing:'Missing', absent:'Absent', absent_backup:'Absent + Backup', pending:'Pending', not_due:'Not due yet' };
 
   const sheetData = rows.map(r => ({
     'Date': r.day,
@@ -2009,10 +2011,10 @@ async function rc_resetFilters(){
   rc_kpiFilter='';
   rc_defaultReportTypePending=true;
   rc_selectedTrackingId=null;rc_selectedTrackingIds=new Set();
+  rc_trackingRecords=[];
   const reportTypePicker=document.getElementById('rc_record_report_type');if(reportTypePicker)reportTypePicker.value='';
   const sapSearch=document.getElementById('rc_sap_search');if(sapSearch)sapSearch.value='';
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = yesterday.toISOString().split('T')[0];
+  const yStr = complianceYesterday();
   document.getElementById('rc_from').value = yStr;
   document.getElementById('rc_to').value   = yStr;
   await rc_loadTrackingPickers();
@@ -2023,8 +2025,7 @@ async function rc_initIfNeeded(forceRefresh=false){
   if(forceRefresh){rc_trackingRecords=[];rc_trackingReportTypes=[];}
   if(!rc_initialized){
     rc_initialized = true;
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().split('T')[0];
+    const yStr = complianceYesterday();
     document.getElementById('rc_from').value = yStr;
     document.getElementById('rc_to').value   = yStr;
     await rc_loadTrackingPickers();
@@ -2037,8 +2038,11 @@ async function rc_initIfNeeded(forceRefresh=false){
 
 async function rc_loadTrackingPickers(){
   if(!rc_trackingRecords.length||!rc_trackingReportTypes.length){
+    const fallback=complianceYesterday();
+    const from=document.getElementById('rc_from')?.value||fallback;
+    const to=document.getElementById('rc_to')?.value||from;
     try{[rc_trackingRecords,rc_trackingReportTypes]=await Promise.all([
-      sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&enddate=gte.${RC_MIN_DATE}&order=enddate.desc`),
+      sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${to}&enddate=gte.${from}&order=enddate.desc`),
       sbGet('report_types?select=id,type,visible&visible=eq.true&order=type')
     ]);rc_trackingReportTypes=orderedVisibleReportTypes(rc_trackingReportTypes);}
     catch(error){return;}
@@ -2121,6 +2125,19 @@ function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,pr
   const assigned=new Map(schedules.map(schedule=>[schedule,[]]));
   const unresolved=new Map(schedules.map(schedule=>[schedule,[]]));
   const pending=[];
+  const candidateIndex=new Map();
+  const addCandidate=(key,schedule)=>{
+    if(!key)return;
+    if(!candidateIndex.has(key))candidateIndex.set(key,[]);
+    candidateIndex.get(key).push(schedule);
+  };
+  schedules.forEach(schedule=>{
+    const day=String(schedule.day||'');
+    const promoterId=String(schedule.promoter_id??'').trim();
+    const promoterName=rcNorm(schedule.promoter_fullname);
+    if(promoterId)addCandidate(`${day}|id:${promoterId}`,schedule);
+    if(promoterName)addCandidate(`${day}|name:${promoterName}`,schedule);
+  });
   const assignEntry=(schedule,entry,referenceMismatch=false)=>assigned.get(schedule).push(referenceMismatch?{...entry,__rcReferenceMismatch:true}:entry);
   const brandReference=(id,name)=>{
     const idValue=String(id??'').trim();
@@ -2137,7 +2154,15 @@ function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,pr
     return rcNorm(schedule.promoter_fullname)===rcNorm(entry[promoterNameField]);
   };
   entries.forEach(entry=>{
-    const candidates=schedules.filter(schedule=>samePromoterDay(schedule,entry));
+    const day=String(entry[dateField]||'');
+    const promoterId=String(entry[promoterIdField]??'').trim();
+    const promoterName=rcNorm(entry[promoterNameField]);
+    const candidateKeys=[
+      promoterId?`${day}|id:${promoterId}`:'',
+      promoterName?`${day}|name:${promoterName}`:''
+    ].filter(Boolean);
+    const candidates=[...new Set(candidateKeys.flatMap(key=>candidateIndex.get(key)||[]))]
+      .filter(schedule=>samePromoterDay(schedule,entry));
     if(!candidates.length)return;
     const entryStore=rcNorm(entry.Store),entryBrand=rcNorm(entry.Brand);
     const entryStoreId=String(entry.Storeid??'').trim(),entryBrandId=String(entry.Brandid??'').trim();
@@ -2189,6 +2214,15 @@ function rcAssignReportedEntries(schedules,entries,{dateField,promoterIdField,pr
   });
   return{assigned,unresolved};
 }
+function rcSumNumeric(entries,field){
+  const values=(entries||[]).map(entry=>{
+    const raw=entry?.[field];
+    if(raw===null||raw===undefined||String(raw).trim()==='')return null;
+    const number=Number(raw);
+    return Number.isFinite(number)?number:null;
+  }).filter(value=>value!==null);
+  return values.length?values.reduce((sum,value)=>sum+value,0):null;
+}
 function rcReportedBrandLines(qEntries,sEntries){
   const groups=new Map();
   const add=(entry,type)=>{
@@ -2209,8 +2243,8 @@ function rcReportedBrandLines(qEntries,sEntries){
     stores:[...group.stores],
     hasQ:group.qEntries.length>0,
     hasS:group.sEntries.length>0,
-    pieces:group.qEntries.reduce((sum,entry)=>sum+(Number(entry['Pieces Sold'])||0),0),
-    turnover:group.qEntries.reduce((sum,entry)=>sum+(Number(entry['Turnover of the day'])||0),0),
+    pieces:rcSumNumeric(group.qEntries,'Pieces Sold'),
+    turnover:rcSumNumeric(group.qEntries,'Turnover of the day'),
     referenceMismatch:group.referenceMismatch,
   })).sort((left,right)=>left.brand.localeCompare(right.brand,undefined,{numeric:true,sensitivity:'base'}));
 }
@@ -2317,6 +2351,10 @@ async function rc_load(){
   if(!from || !requestedTo){toast('Please set a date range','error');return;}
   if(from>requestedTo){toast('The From date must be before the To date','error');return;}
   rc_effectiveFrom=from;rc_effectiveTo=to;
+  if(rc_loadController)rc_loadController.abort();
+  const loadController=new AbortController();
+  rc_loadController=loadController;
+  const signal=loadController.signal;
   const requestId=++rc_loadRequest;
   rc_emptyState=null;
   const selectedTrackings=rcSelectedTrackingRecords();
@@ -2344,12 +2382,14 @@ async function rc_load(){
 
   try{
     const [schedRows,trackingRows,reportTypeRows,storesWithSector] = await Promise.all([
-      sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,agency,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}${selectedScheduleFilter}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`),
-      sbGetAll(`InsightsTracking?select=*&enddate=gte.${RC_MIN_DATE}`),
-      sbGet('report_types?select=id,type,visible&visible=eq.true&order=type'),
-      sbGet('GI_stores?select=id,store,Sector_id'),
+      sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,agency,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status,synced_at&day=gte.${from}&day=lte.${to}${selectedScheduleFilter}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc,promoter_fullname.asc`,1000,{signal}),
+      sbGetAll(`InsightsTracking?select=*&startdate=not.is.null&startdate=lte.${to}&enddate=gte.${from}`,1000,{signal}),
+      sbGet('report_types?select=id,type,visible&visible=eq.true&order=type',{signal}),
+      sbGet('GI_stores?select=id,store,Sector_id',{signal}),
     ]);
     if(requestId!==rc_loadRequest)return;
+    rc_trackingRecords=trackingRows;
+    rc_trackingReportTypes=orderedVisibleReportTypes(reportTypeRows);
 
     // Reporting Check only: hide excluded campaign types for every client
     const EXCLUDED_CAMPAIGN_TERMS = [
@@ -2457,9 +2497,9 @@ async function rc_load(){
     }
 
     const [questRows,salesRows,clubAvoltaRows] = await Promise.all([
-      sbGetAll(`legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Storeid,Brand,Brandid,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`),
-      sbGetAll(`legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`),
-      rcLoadClubAvoltaSubmissions(from,to).catch(error=>{console.warn('ClubAvolta submissions unavailable:',error);return null;}),
+      sbGetAll(`legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Storeid,Brand,Brandid,"Pieces Sold","Turnover of the day"&Date=gte.${from}&Date=lte.${to}`,1000,{signal}),
+      sbGetAll(`legacy_sales?select=Date,"Promoter Name",Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`,1000,{signal}),
+      rcLoadClubAvoltaSubmissions(from,to,signal).catch(error=>{if(error?.name==='AbortError')throw error;console.warn('ClubAvolta submissions unavailable:',error);return null;}),
     ]);
     if(requestId!==rc_loadRequest)return;
     const qAssignment=rcAssignReportedEntries(eligibleSchedules,questRows,{dateField:'Date',promoterIdField:'Promoterid',promoterNameField:'Promoter',storeRows:storesWithSector});
@@ -2483,8 +2523,8 @@ async function rc_load(){
       const reportBreakdown=rcReportedBrandLines(qEntries,sEntries);
       const isMultibrandBlock=rcIsMultibrandSchedule(r);
 
-      const pieces   = qEntries.reduce((sum,e)=> sum + (Number(e['Pieces Sold'])||0), 0);
-      const turnover = qEntries.reduce((sum,e)=> sum + (Number(e['Turnover of the day'])||0), 0);
+      const pieces=rcSumNumeric(qEntries,'Pieces Sold');
+      const turnover=rcSumNumeric(qEntries,'Turnover of the day');
 
       let status;
       const ts = (r.timeslot_status||'').toLowerCase();
@@ -2537,8 +2577,11 @@ async function rc_load(){
       ?`<span class="rc-sync-pill">↻ ${rc_timeAgo(lastSynced)}</span>`:'';
 
   } catch(e){
+    if(e?.name==='AbortError'||requestId!==rc_loadRequest)return;
     document.getElementById('rc_area').innerHTML =
       `<div style="padding:48px;text-align:center;color:var(--red);">Error: ${e.message}</div>`;
+  } finally {
+    if(rc_loadController===loadController)rc_loadController=null;
   }
 }
 
@@ -3471,7 +3514,7 @@ function rc_render(){
     if(s==='partial')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--amber-light);color:var(--amber);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⚠️ Partial</span>`;
     if(s==='absent_backup') return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:#fff7ed;color:#ea580c;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">🔄 Absent + Backup</span>`;
     if(s==='absent')        return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--red-light);color:var(--red);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">🚫 Absent</span>`;
-    if(s==='pending')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--g100);color:var(--g500);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ En attente</span>`;
+    if(s==='pending')       return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--g100);color:var(--g500);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">⏳ Pending</span>`;
     return `<span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.2;background:var(--red-light);color:var(--red);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">❌ Missing</span>`;
   };
   const check = (ok,notDue=false) => notDue
@@ -3539,8 +3582,8 @@ function rc_render(){
       const salesCell=splitBrands?brandStack(brandLines,line=>check(line.hasS,r.status==='not_due'),'center'):check(r.hasS,r.status==='not_due');
       const reportedStoreCell=splitBrands?brandStack(brandLines,line=>`<span style="${line.referenceMismatch?'color:var(--amber);font-weight:600;':''}">${esc(line.stores.join(', ')||'—')}${line.referenceMismatch?' ⚠️':''}</span>`):mismatchTag(r.schedStoreCode,r.reportedStores);
       const reportedBrandCell=splitBrands?brandStack(brandLines,line=>`<span><strong>${esc(line.brand)}</strong>${line.brandId?`<small style="display:block;color:var(--g400);font-family:monospace;">ID ${esc(line.brandId)}</small>`:''}</span>`):mismatchTag(r.schedBrand,r.reportedBrands);
-      const piecesCell=splitBrands?brandStack(brandLines,line=>line.hasQ?Number(line.pieces).toLocaleString():'—','right'):(r.pieces!=null?r.pieces.toLocaleString():'—');
-      const turnoverCell=splitBrands?brandStack(brandLines,line=>line.hasQ?Number(line.turnover).toLocaleString(undefined,{maximumFractionDigits:0}):'—','right'):(r.turnover!=null?r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}):'—');
+      const piecesCell=splitBrands?brandStack(brandLines,line=>line.hasQ&&line.pieces!=null?Number(line.pieces).toLocaleString():'—','right'):(r.pieces!=null?r.pieces.toLocaleString():'—');
+      const turnoverCell=splitBrands?brandStack(brandLines,line=>line.hasQ&&line.turnover!=null?Number(line.turnover).toLocaleString(undefined,{maximumFractionDigits:0}):'—','right'):(r.turnover!=null?r.turnover.toLocaleString(undefined,{maximumFractionDigits:0}):'—');
 
       html += `<tr style="border-bottom:1px solid var(--g100);height:70px;" onmouseover="this.style.background='var(--g50)'" onmouseout="this.style.background=''">
         <td style="padding:9px 8px;vertical-align:middle;overflow-wrap:anywhere;">
