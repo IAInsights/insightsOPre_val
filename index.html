@@ -688,7 +688,7 @@ async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmId
     const [scheduleRows,questionnaireRows,clubAvoltaRows]=await Promise.all([
       sbGetAll(`GI_ScheduleV2?select=day,promoter_id,promoter_fullname,store_code,pos,pos_id,brand,gi_brand_id,client,role,mission_id,campaign_name,campaign_sapcode,timeslot_status&day=gte.${from}&day=lte.${to}&promoter_status=neq.Pending&brand=not.ilike.*JTI*&client=neq.${encodeURIComponent('GLOBE TRAVEL RETAIL')}&pos=neq.${encodeURIComponent('TOURNEE TERRAIN')}&campaign_name=not.ilike.*FIELD SUPERVISOR*&or=(timeslot_status.is.null,timeslot_status.neq.Annulé)&order=day.desc`),
       sbGetAll(`legacy_questionnaire?select=Date,Promoter,Promoterid,Store,Storeid,Brand,Brandid&Date=gte.${from}&Date=lte.${to}`),
-      sbPost('rpc/club_avolta_submissions',{p_from:from,p_to:to})
+      sbPost('rpc/club_avolta_submissions',{p_from:from,p_to:to}).catch(error=>{console.warn('ClubAvolta submissions unavailable:',error);return[];})
     ]);
     const excludedRoles=new Set(['Team Leader','Team leader','Team Leader GVA','Superviseur / euse','Superviseur/euse','Téléopérateur/trice']);
     const excludedTerms=['training','coaching','store check','atelier s'];
