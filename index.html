@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Reporting Tracking &amp; Validation</title>
 <link rel="icon" type="image/png" sizes="64x64" href="operations-favicon.png?v=operations-check-1">
 <link rel="shortcut icon" type="image/png" href="operations-favicon.png?v=operations-check-1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="stylesheet" href="admin.css?v=20261015-1">
+<link rel="stylesheet" href="admin.css?v=20261015-2">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -403,14 +406,15 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn" id="hdr-tab-admin" onclick="setView('admin')">Admin</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.10.15.1</summary>
+      <summary title="Open version history">V2026.10.15.2</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.10.15.1</div>
+        <div class="release-heading">New version V2026.10.15.2</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
           <li>Contact editing now supports preferred brands and retailer assignments.</li>
           <li>Retailers are ordered by ID in Admin.</li>
-          <li>Updated Admin files are cache-busted so every user receives the current version.</li>
+          <li>Reporting Check refreshes automatically when users return to an open browser tab.</li>
+          <li>Updated files are cache-busted so every user receives the current version.</li>
         </ul>
       </div>
     </details>
@@ -2053,6 +2057,20 @@ async function rc_initIfNeeded(forceRefresh=false){
   }
 }
 
+let rc_lastFocusRefresh=0;
+async function rc_refreshOnFocus(){
+  if(view!=='rc'||document.hidden||!rc_initialized)return;
+  const now=Date.now();
+  if(now-rc_lastFocusRefresh<30000)return;
+  rc_lastFocusRefresh=now;
+  rc_trackingRecords=[];
+  rc_trackingReportTypes=[];
+  await rc_loadTrackingPickers();
+  await rc_load();
+}
+document.addEventListener('visibilitychange',rc_refreshOnFocus);
+window.addEventListener('focus',rc_refreshOnFocus);
+
 async function rc_loadTrackingPickers(){
   if(!rc_trackingRecords.length||!rc_trackingReportTypes.length){
     const fallback=complianceYesterday();
@@ -3647,6 +3665,6 @@ function rc_render(){
 
 loadData();
 </script>
-<script src="admin.js?v=20261015-1"></script>
+<script src="admin.js?v=20261015-2"></script>
 </body>
 </html>
