@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="stylesheet" href="admin.css?v=20261015-2">
+<link rel="stylesheet" href="admin.css?v=20261015-3">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -406,11 +406,12 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn" id="hdr-tab-admin" onclick="setView('admin')">Admin</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.10.15.2</summary>
+      <summary title="Open version history">V2026.10.15.3</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.10.15.2</div>
+        <div class="release-heading">New version V2026.10.15.3</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
+          <li>Club Avolta submissions now use a sanitized status index, so Reporting Check works consistently for all users without an extra login.</li>
           <li>Contact editing now supports preferred brands and retailer assignments.</li>
           <li>Retailers are ordered by ID in Admin.</li>
           <li>Reporting Check refreshes automatically when users return to an open browser tab.</li>
@@ -700,14 +701,11 @@ function rcAddUtcDays(value,days){
   return date.toISOString().slice(0,10);
 }
 async function rcLoadClubAvoltaSubmissions(from,to,signal){
-  const rows=[];
-  for(let start=from;start<=to;){
-    const batchEnd=rcAddUtcDays(start,369);
-    const end=batchEnd<to?batchEnd:to;
-    rows.push(...await sbPost('rpc/club_avolta_submissions',{p_from:start,p_to:end},{signal}));
-    start=rcAddUtcDays(end,1);
-  }
-  return rows;
+  return sbGetAll(
+    `club_avolta_submission_status?select=activity_date,promoter_id,store_id,submitted&activity_date=gte.${from}&activity_date=lte.${to}&submitted=eq.true&order=activity_date.asc`,
+    1000,
+    {signal}
+  );
 }
 
 async function applyReportingCompliance(records,{autoConfirm=false,autoConfirmIds=null,asOfDate=''}={}){
@@ -3665,6 +3663,6 @@ function rc_render(){
 
 loadData();
 </script>
-<script src="admin.js?v=20261015-2"></script>
+<script src="admin.js?v=20261015-3"></script>
 </body>
 </html>
