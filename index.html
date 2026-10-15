@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css?v=20261015-1">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -403,13 +403,14 @@ button.home-compliance-row:focus-visible{outline:2px solid var(--blue);outline-o
   <button class="tab-btn" id="hdr-tab-admin" onclick="setView('admin')">Admin</button>
   <div class="header-right">
     <details class="app-release">
-      <summary title="Open version history">V2026.10.01.4</summary>
+      <summary title="Open version history">V2026.10.15.1</summary>
       <div class="release-panel" style="left:auto;right:0;">
-        <div class="release-heading">New version V2026.10.01.4</div>
+        <div class="release-heading">New version V2026.10.15.1</div>
         <div class="release-date">What&rsquo;s new:</div>
         <ul class="release-list">
-          <li>Reports to Validate and Closing Soon agency counts now appear as compact lists instead of cards.</li>
-          <li>Counts and agency ordering remain unchanged.</li>
+          <li>Contact editing now supports preferred brands and retailer assignments.</li>
+          <li>Retailers are ordered by ID in Admin.</li>
+          <li>Updated Admin files are cache-busted so every user receives the current version.</li>
         </ul>
       </div>
     </details>
@@ -3646,6 +3647,6 @@ function rc_render(){
 
 loadData();
 </script>
-<script src="admin.js"></script>
+<script src="admin.js?v=20261015-1"></script>
 </body>
 </html>
